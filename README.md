@@ -57,13 +57,13 @@ $ python vibecode.py analyze . --top 5
 
   📊  VibeCode analyze  —  /home/user/VibeCode
 
-   Files:  11   Lines:  2544   Size:  112.0 KB
+   Files:  11   Lines:  2556   Size:  112.8 KB
    (skipped 1 binary file(s))
 
    Languages
    Python            3 files    1,238 lines  ██████████████████████
    HTML              1 files      904 lines  ████████████████░░░░░░
-   Markdown          2 files      251 lines  ████░░░░░░░░░░░░░░░░░░
+   Markdown          2 files      263 lines  █████░░░░░░░░░░░░░░░░░
    YAML              1 files       52 lines  █░░░░░░░░░░░░░░░░░░░░░
    SVG               1 files       41 lines  █░░░░░░░░░░░░░░░░░░░░░
    Other             2 files       31 lines  █░░░░░░░░░░░░░░░░░░░░░
@@ -72,7 +72,7 @@ $ python vibecode.py analyze . --top 5
    Largest files (top 5)
      48.9 KB      904 lines  index.html
      37.5 KB    1,001 lines  vibecode.py
-      9.9 KB      213 lines  README.md
+     10.7 KB      225 lines  README.md
       8.5 KB      237 lines  tests/test_vibecode.py
       2.1 KB       41 lines  assets/banner.svg
 
@@ -114,19 +114,19 @@ $ python vibecode.py dashboard . --once
 
 ╭────────────────────────────────────────────────────────────╮
 │ ✨ VibeCode Dashboard — Wednesday, 09 September 2026        │
-│ 🕐 19:51:10                                                 │
+│ 🕐 19:54:01                                                 │
 │ ────────────────────────────────────────────────────────── │
-│ SYSTEM   CPUs: 2   Load: 0.00 / 0.00 / 0.00                │
-│   Memory: 264 / 3939 MB used                               │
-│   Disk:   815.4 MB / 20.3 GB used ░░░░░░░░░░░░             │
+│ SYSTEM   CPUs: 2   Load: 0.06 / 0.02 / 0.00                │
+│   Memory: 283 / 3939 MB used                               │
+│   Disk:   817.4 MB / 20.3 GB used ░░░░░░░░░░░░             │
 │ ────────────────────────────────────────────────────────── │
 │ GIT      branch: main  •  clean ✔                          │
-│   Last: 46bd037 Initial commit                             │
+│   Last: a3a4bca ✨ VibeCode v1.0.0: zero-dependency CLI + si…
 │ ────────────────────────────────────────────────────────── │
 │ PROJECT  /home/user/VibeCode                               │
-│   11 files • 2,544 lines  •  top: Python, HTML             │
+│   11 files • 2,556 lines  •  top: Python, HTML             │
 │ ────────────────────────────────────────────────────────── │
-│ “Make it work, make it right, make it fast.” — K. Beck     │
+│ “Ship early, ship often, touch grass.” — VibeCode          │
 │ Press Ctrl+C to exit                                       │
 ╰────────────────────────────────────────────────────────────╯
 ```
