@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="500" viewBox="0 0 860 500" role="img" aria-label="VibeCode CLI vibe-check output">
+  <defs>
+    <linearGradient id="tbg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0d1530"/>
+      <stop offset="1" stop-color="#0b1120"/>
+    </linearGradient>
+  </defs>
+  <rect width="860" height="500" rx="16" fill="url(#tbg)" stroke="#26355c" stroke-width="2"/>
+  <rect x="2" y="2" width="856" height="46" rx="14" fill="#111a33"/>
+  <circle cx="34" cy="25" r="8" fill="#ff5f57"/>
+  <circle cx="58" cy="25" r="8" fill="#febc2e"/>
+  <circle cx="82" cy="25" r="8" fill="#28c840"/>
+  <text x="430" y="31" text-anchor="middle" font-family="system-ui, sans-serif" font-size="15" fill="#8b96b5">vibecode — zsh</text>
+  <g font-family="Menlo, Consolas, 'DejaVu Sans Mono', monospace" font-size="15">
+    <text x="28" y="82"><tspan fill="#34d399">$ </tspan><tspan fill="#e8edf7">python vibecode.py vibe-check . --roast</tspan></text>
+    <text x="28" y="130" fill="#22d3ee">🔮  Vibe-check  —  ~/VibeCode</text>
+    <text x="28" y="178"><tspan fill="#34d399">✔</tspan><tspan fill="#e8edf7">  README file            </tspan><tspan fill="#8b96b5">+15</tspan></text>
+    <text x="28" y="202"><tspan fill="#34d399">✔</tspan><tspan fill="#e8edf7">  License                </tspan><tspan fill="#8b96b5">+10</tspan></text>
+    <text x="28" y="226"><tspan fill="#34d399">✔</tspan><tspan fill="#e8edf7">  .gitignore             </tspan><tspan fill="#8b96b5">+10</tspan></text>
+    <text x="28" y="250"><tspan fill="#34d399">✔</tspan><tspan fill="#e8edf7">  Tests                  </tspan><tspan fill="#8b96b5">+15</tspan></text>
+    <text x="28" y="274"><tspan fill="#34d399">✔</tspan><tspan fill="#e8edf7">  CI workflow            </tspan><tspan fill="#8b96b5">+10</tspan></text>
+    <text x="28" y="298"><tspan fill="#34d399">✔</tspan><tspan fill="#e8edf7">  Recent commit (&lt;30d)   </tspan><tspan fill="#8b96b5">+10</tspan></text>
+    <text x="28" y="322"><tspan fill="#34d399">✔</tspan><tspan fill="#e8edf7">  Real code (&gt;3 files)   </tspan><tspan fill="#8b96b5">+10</tspan></text>
+    <text x="28" y="346"><tspan fill="#34d399">✔</tspan><tspan fill="#e8edf7">  Docs / contributing    </tspan><tspan fill="#8b96b5">+5</tspan></text>
+    <text x="28" y="370"><tspan fill="#34d399">✔</tspan><tspan fill="#e8edf7">  Project manifest       </tspan><tspan fill="#8b96b5">+5</tspan></text>
+    <text x="28" y="394"><tspan fill="#34d399">✔</tspan><tspan fill="#e8edf7">  Clean git tree         </tspan><tspan fill="#8b96b5">+10</tspan></text>
+    <text x="28" y="442"><tspan fill="#8b96b5">Score: </tspan><tspan fill="#34d399" font-weight="bold">100/100  [████████████████████]</tspan></text>
+    <text x="28" y="470"><tspan fill="#8b96b5">Tier:  </tspan><tspan fill="#34d399" font-weight="bold">LEGENDARY</tspan><tspan fill="#e8edf7">  🏆 museum-worthy. Flawless.</tspan></text>
+  </g>
+</svg>

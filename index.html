@@ -1,0 +1,1754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VibeCode Playground — free dev toolkit in one file</title>
+<meta name="description" content="VibeCode Playground: JSON formatter, regex tester, Base64, password generator, pomodoro, sorting visualizer, markdown preview and color tools. Single HTML file, works offline.">
+<style>
+:root{
+  --bg:#070b16; --panel:#0d1428; --panel2:#111a33; --line:#1e2a4d;
+  --text:#e8edf7; --muted:#8b96b5;
+  --cyan:#22d3ee; --violet:#a78bfa; --pink:#f472b6;
+  --green:#34d399; --yellow:#fbbf24; --red:#f87171;
+  --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,sans-serif;min-height:100vh;line-height:1.55}
+.bg-blobs{position:fixed;inset:0;z-index:-1;overflow:hidden}
+.bg-blobs span{position:absolute;border-radius:50%;filter:blur(110px);opacity:.28;animation:float 16s ease-in-out infinite alternate}
+.bg-blobs span:nth-child(1){width:480px;height:480px;left:-140px;top:-140px;background:#0ea5e9}
+.bg-blobs span:nth-child(2){width:420px;height:420px;right:-120px;top:10%;background:#8b5cf6;animation-delay:-6s}
+.bg-blobs span:nth-child(3){width:380px;height:380px;left:30%;bottom:-160px;background:#ec4899;animation-delay:-11s}
+@keyframes float{from{transform:translateY(0) scale(1)}to{transform:translateY(40px) scale(1.08)}}
+.topbar{max-width:1120px;margin:0 auto;padding:26px 20px 6px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{font-size:30px;font-weight:800;letter-spacing:-.5px;background:linear-gradient(90deg,var(--cyan),var(--violet),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+.tagline{color:var(--muted);font-size:14px}
+.tagline b{color:var(--text)}
+.pill{margin-left:auto;font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:4px 12px;background:rgba(255,255,255,.02)}
+.pill b{color:var(--green)}
+.tabs{max-width:1120px;margin:14px auto 0;padding:0 20px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:thin}
+.tab-btn{flex:0 0 auto;border:1px solid var(--line);background:rgba(255,255,255,.02);color:var(--muted);border-radius:10px;padding:9px 14px;font-size:14px;cursor:pointer;transition:.18s}
+.tab-btn:hover{color:var(--text);border-color:#33456f;transform:translateY(-1px)}
+.tab-btn.active{color:#06121f;font-weight:700;background:linear-gradient(90deg,var(--cyan),var(--violet));border-color:transparent;box-shadow:0 4px 22px rgba(34,211,238,.35)}
+.container{max-width:1120px;margin:0 auto;padding:18px 20px 40px}
+.tab-panel{display:none;animation:fade .25s ease}
+.tab-panel.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.012));border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.card h2{font-size:19px;margin-bottom:4px}
+.card p.desc{color:var(--muted);font-size:14px;margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:820px){.grid2,.grid3{grid-template-columns:1fr}}
+label.lbl{display:block;font-size:13px;color:var(--muted);margin:10px 0 6px}
+label.lbl:first-child{margin-top:0}
+textarea,input[type=text],input[type=number],select{width:100%;background:var(--surface2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 12px;font-size:14px;outline:none;transition:.15s}
+textarea{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;min-height:170px;resize:vertical;line-height:1.5}
+textarea:focus,input:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(34,211,238,.12)}
+input[type=range]{width:100%;accent-color:var(--cyan)}
+input[type=checkbox]{accent-color:var(--cyan);width:16px;height:16px;vertical-align:-3px}
+input[type=color]{width:52px;height:38px;border:1px solid var(--line);border-radius:8px;background:var(--surface2);padding:2px;cursor:pointer}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btn{border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--text);border-radius:10px;padding:9px 16px;font-size:14px;cursor:pointer;transition:.15s}
+.btn:hover{border-color:#33456f;transform:translateY(-1px)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn.primary{background:linear-gradient(90deg,var(--cyan),var(--violet));border:none;color:#06121f;font-weight:700}
+.btn.primary:hover{box-shadow:0 4px 20px rgba(34,211,238,.35)}
+.btn.danger{border-color:#5b2333;color:var(--red)}
+.btn.small{padding:6px 12px;font-size:13px}
+pre.output{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;font-size:13.5px;overflow:auto;max-height:420px;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.status{font-size:13px;margin-top:10px;min-height:20px}
+.status.ok{color:var(--green)} .status.bad{color:var(--red)} .status.info{color:var(--muted)}
+mark{background:rgba(251,191,36,.35);color:#ffe9b0;border-radius:3px;padding:0 1px}
+.hero{text-align:center;padding:44px 20px 30px}
+.hero h1{font-size:clamp(34px,6vw,58px);font-weight:800;letter-spacing:-1px;line-height:1.1}
+.hero h1 .grad{background:linear-gradient(90deg,var(--cyan),var(--violet),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+.typing{font-family:ui-monospace,Menlo,Consolas,monospace;color:var(--cyan);font-size:16px;min-height:26px;margin-top:12px}
+.typing::after{content:"▋";animation:blink 1s steps(1) infinite;margin-left:2px}
+@keyframes blink{50%{opacity:0}}
+.hero p.sub{color:var(--muted);max-width:640px;margin:10px auto 0}
+.feat{cursor:pointer;transition:.18s}
+.feat:hover{transform:translateY(-3px);border-color:#33456f}
+.feat .ico{font-size:26px}
+.feat h3{font-size:16px;margin:6px 0 4px}
+.feat p{color:var(--muted);font-size:13.5px}
+.snippet{display:flex;gap:8px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:ui-monospace,Menlo,monospace;font-size:13px;overflow-x:auto;white-space:nowrap}
+.snippet code{flex:1;color:var(--green)}
+.kbd{font-family:ui-monospace,monospace;font-size:12px;background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:1px 7px}
+/* pomodoro */
+.pomo-wrap{display:flex;gap:26px;align-items:center;flex-wrap:wrap}
+.ringbox{position:relative;width:220px;height:220px;flex:0 0 auto}
+.ring{width:220px;height:220px;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:10;stroke-linecap:round}
+.ring-bg{stroke:var(--chip)}
+.ring-fg{stroke:url(#ringGrad);stroke-dasharray:339.292;stroke-dashoffset:0;transition:stroke-dashoffset .3s linear}
+.ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring-time{font-size:42px;font-weight:800;font-variant-numeric:tabular-nums}
+.ring-mode{color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:2px}
+.mode-btns{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.dots{display:flex;gap:8px;margin-top:14px}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--chip);border:1px solid var(--line)}
+.dot.done{background:var(--green);border-color:var(--green)}
+.numrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.numrow div{flex:1;min-width:90px}
+/* sorting */
+#sortBars{display:flex;align-items:flex-end;gap:2px;height:260px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:12px}
+.sbar{flex:1;min-width:2px;border-radius:3px 3px 0 0;background:linear-gradient(180deg,var(--cyan),#0e7490);transition:height .05s linear}
+.sbar.cmp{background:linear-gradient(180deg,var(--yellow),#92400e)}
+.sbar.swap{background:linear-gradient(180deg,var(--pink),#9d174d)}
+.sbar.done{background:linear-gradient(180deg,var(--green),#065f46)}
+.sort-stats{display:flex;gap:18px;color:var(--muted);font-size:13px;margin-top:10px;flex-wrap:wrap}
+.sort-stats b{color:var(--text);font-variant-numeric:tabular-nums}
+/* markdown */
+.md-preview{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:16px;min-height:170px;max-height:480px;overflow:auto;font-size:14.5px}
+.md-preview h1,.md-preview h2,.md-preview h3,.md-preview h4{margin:.7em 0 .4em;line-height:1.25}
+.md-preview h1{font-size:1.6em;border-bottom:1px solid var(--line);padding-bottom:.3em}
+.md-preview h2{font-size:1.35em} .md-preview h3{font-size:1.15em}
+.md-preview p{margin:.5em 0} .md-preview ul,.md-preview ol{margin:.5em 0 .5em 1.4em}
+.md-preview li{margin:.2em 0}
+.md-preview code{font-family:ui-monospace,Menlo,monospace;background:var(--chip);border-radius:6px;padding:1px 6px;font-size:.88em}
+.md-preview pre{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px;overflow:auto;margin:.6em 0}
+.md-preview pre code{background:none;padding:0}
+.md-preview blockquote{border-left:3px solid var(--violet);color:var(--muted);margin:.6em 0;padding:.2em 0 .2em 1em}
+.md-preview a{color:var(--cyan)} .md-preview hr{border:none;border-top:1px solid var(--line);margin:1em 0}
+.md-preview img{max-width:100%;border-radius:8px}
+/* colors */
+.swatches{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.swatch{flex:1;min-width:110px;border-radius:10px;overflow:hidden;border:1px solid var(--line);cursor:pointer;transition:.15s}
+.swatch:hover{transform:translateY(-2px)}
+.swatch .c{height:74px}
+.swatch .h{font-family:ui-monospace,monospace;font-size:12px;padding:7px 9px;background:var(--surface2);text-align:center}
+.contrast-box{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.ratio{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums}
+.badge{font-size:12px;border-radius:999px;padding:3px 12px;border:1px solid var(--line);color:var(--muted)}
+.badge.pass{color:var(--green);border-color:#14532d}
+.badge.fail{color:var(--red);border-color:#5b2333}
+/* v1.1 additions */
+.kv{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+.kv td{border-top:1px dashed var(--chip);padding:6px 8px;vertical-align:top}
+.kv td:first-child{color:var(--muted);white-space:nowrap;width:140px}
+.kv code{font-family:ui-monospace,monospace;color:var(--cyan)}
+.grad-preview{height:120px;border-radius:10px;border:1px solid var(--line);margin-top:12px}
+.preset-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.case-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+@media(max-width:640px){.case-grid{grid-template-columns:1fr}}
+.case-item{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;transition:.15s;overflow:hidden}
+.case-item:hover{border-color:var(--cyan);transform:translateY(-1px)}
+.case-item .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.case-item .v{font-family:ui-monospace,monospace;font-size:13.5px;word-break:break-all;margin-top:2px}
+.cron-next{font-family:ui-monospace,monospace;font-size:13px;margin-top:8px}
+.cron-next div{padding:4px 0;border-bottom:1px dashed var(--chip)}
+.cron-next b{color:var(--green)}
+/* v1.2: themable surfaces */
+:root{--surface:var(--surface);--surface2:var(--surface2);--chip:var(--chip)}
+[data-theme="light"]{--bg:#eef2f7;--panel:#ffffff;--panel2:#f6f9fc;--line:#c3cfdd;--text:#0f172a;--muted:#5b6b85;--surface:#ffffff;--surface2:#eef3f9;--chip:#dde6f1}
+[data-theme="light"] .bg-blobs{opacity:.45}
+[data-theme="light"] .typing{color:#0891b2}
+[data-theme="light"] .status.ok{color:#059669}
+[data-theme="light"] .kv code{color:#0e7490}
+[data-theme="light"] .snippet code{color:#059669}
+.race-table td:first-child{width:150px}
+.race-table b{color:var(--text)}
+#themeToggle{margin-left:8px}
+/* v1.3: diff + hash */
+#dfOut{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:10px;max-height:320px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+.df-same{color:var(--muted)}
+.df-add{background:rgba(52,211,153,.12);color:var(--green)}
+.df-del{background:rgba(248,113,113,.12);color:var(--red)}
+.hx-grid{margin-top:10px}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;word-break:break-all}
+#shareBtn{margin-left:8px}
+.dim{color:var(--muted)}
+/* misc */
+.checks{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:14px}
+.checks label{display:flex;gap:6px;align-items:center;cursor:pointer;color:var(--text)}
+footer{max-width:1120px;margin:0 auto;padding:10px 20px 34px;color:var(--muted);font-size:13px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+footer .spacer{flex:1}
+#toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface2);border:1px solid var(--cyan);color:var(--text);border-radius:10px;padding:10px 20px;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:99}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.pw-out{font-family:ui-monospace,Menlo,monospace;font-size:17px;word-break:break-all;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:12px;min-height:56px}
+.meter{height:10px;border-radius:99px;background:var(--chip);margin-top:10px;overflow:hidden}
+.meter>div{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--red),var(--yellow),var(--green));transition:width .25s}
+.rx-list{font-family:ui-monospace,monospace;font-size:12.5px;max-height:180px;overflow:auto;margin-top:10px;color:var(--muted)}
+.rx-list div{padding:3px 0;border-bottom:1px dashed var(--chip)}
+.rx-list b{color:var(--yellow)}
+@media(max-width:640px){.topbar{padding-top:18px}.logo{font-size:24px}.hero{padding:26px 10px 18px}.pomo-wrap{justify-content:center}}
+</style>
+</head>
+<body>
+<div class="bg-blobs"><span></span><span></span><span></span></div>
+
+<header class="topbar">
+  <div class="logo">✨ VibeCode</div>
+  <div class="tagline">dev toolkit that <b>just works</b> — 1 file, 0 dependencies, 100% offline</div>
+  <div class="pill">⚡ <b>17 tools</b> in one page</div>
+  <button class="btn small" id="themeToggle" title="Toggle light/dark theme">🌙</button>
+  <button class="btn small" id="shareBtn" title="Copy share link">🔗</button>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button class="tab-btn active" data-tab="home">🏠 Home</button>
+  <button class="tab-btn" data-tab="json">📦 JSON</button>
+  <button class="tab-btn" data-tab="regex">🔍 Regex</button>
+  <button class="tab-btn" data-tab="base64">🔐 Base64</button>
+  <button class="tab-btn" data-tab="password">🎲 Password</button>
+  <button class="tab-btn" data-tab="pomodoro">🍅 Pomodoro</button>
+  <button class="tab-btn" data-tab="sorting">📊 Sorting</button>
+  <button class="tab-btn" data-tab="markdown">📝 Markdown</button>
+  <button class="tab-btn" data-tab="colors">🎨 Colors</button>
+  <button class="tab-btn" data-tab="cron">⏰ Cron</button>
+  <button class="tab-btn" data-tab="jwt">🔑 JWT</button>
+  <button class="tab-btn" data-tab="lorem">📝 Lorem</button>
+  <button class="tab-btn" data-tab="case">Aa Case</button>
+  <button class="tab-btn" data-tab="unix">⏱ Unix</button>
+  <button class="tab-btn" data-tab="codecs">🔤 Codecs</button>
+  <button class="tab-btn" data-tab="diff">🔀 Diff</button>
+  <button class="tab-btn" data-tab="hash">#️⃣ Hash</button>
+</nav>
+
+<main class="container">
+
+  <!-- HOME -->
+  <section class="tab-panel active" id="tab-home">
+    <div class="hero">
+      <h1>Ship faster with<br><span class="grad">good vibes only</span></h1>
+      <div class="typing" id="typing"></div>
+      <p class="sub">Every tool a developer needs daily — formatter, tester, encoder, timer, visualizer — packed into a single HTML file. No signup, no tracking, no build step. Save it, share it, use it forever.</p>
+    </div>
+    <div class="grid3">
+      <div class="card feat" data-goto="json"><div class="ico">📦</div><h3>JSON Formatter</h3><p>Validate, prettify and minify JSON. Sample, copy &amp; download in one click.</p></div>
+      <div class="card feat" data-goto="regex"><div class="ico">🔍</div><h3>Regex Tester</h3><p>Live highlighting, match list and capture groups. Flags included.</p></div>
+      <div class="card feat" data-goto="base64"><div class="ico">🔐</div><h3>Base64 Codec</h3><p>Unicode-safe encode &amp; decode. Emoji survive the round-trip. 🌊</p></div>
+      <div class="card feat" data-goto="password"><div class="ico">🎲</div><h3>Password Generator</h3><p>Cryptographically secure passwords with a live entropy meter.</p></div>
+      <div class="card feat" data-goto="pomodoro"><div class="ico">🍅</div><h3>Pomodoro Timer</h3><p>Focus / break cycles with a progress ring, sound and cycle dots.</p></div>
+      <div class="card feat" data-goto="sorting"><div class="ico">📊</div><h3>Sorting Visualizer</h3><p>Watch bubble, selection, insertion and quick sort battle it out.</p></div>
+      <div class="card feat" data-goto="markdown"><div class="ico">📝</div><h3>Markdown Preview</h3><p>Instant preview with a built-in mini parser. Zero libraries.</p></div>
+      <div class="card feat" data-goto="colors"><div class="ico">🎨</div><h3>Color Tools</h3><p>Harmonious palette generator + WCAG contrast checker.</p></div>
+            <div class="card feat" data-goto="cron"><div class="ico">⏰</div><h3>Cron Parser</h3><p>Human-readable schedules and next run times for any cron expression.</p></div>
+      <div class="card feat" data-goto="jwt"><div class="ico">🔑</div><h3>JWT Decoder</h3><p>Decode header &amp; payload, inspect claims, verify HS256 signatures.</p></div>
+      <div class="card feat" data-goto="lorem"><div class="ico">📝</div><h3>Lorem Ipsum</h3><p>Placeholder words, sentences and paragraphs in one click.</p></div>
+      <div class="card feat" data-goto="case"><div class="ico">Aa</div><h3>Case Converter</h3><p>camelCase, snake_case, kebab-case and more — click any to copy.</p></div>
+      <div class="card feat" data-goto="unix"><div class="ico">⏱</div><h3>Unix Time</h3><p>Timestamp ↔ date converter with a live ticking clock.</p></div>
+      <div class="card feat" data-goto="codecs"><div class="ico">🔤</div><h3>Text Codecs</h3><p>URL, HTML entities, ROT13 and slugify in one place.</p></div>
+<div class="card feat" data-goto="diff"><div class="ico">🔀</div><h3>Text Diff</h3><p>Line-by-line LCS diff with red/green highlighting.</p></div>
+<div class="card feat" data-goto="hash"><div class="ico">#️⃣</div><h3>Hash &amp; UUID</h3><p>SHA-1/256/384/512 via WebCrypto + random UUIDs.</p></div>
+<div class="card feat" data-goto="home" id="featCli"><div class="ico">💻</div><h3>+ Terminal CLI</h3><p>Companion Python CLI: analyze, vibe-check, banner, dashboard…</p></div>
+    </div>
+    <div class="card">
+      <h2>💻 Prefer the terminal?</h2>
+      <p class="desc">VibeCode ships with a zero-dependency Python CLI. One file, ten commands.</p>
+      <div class="snippet"><code id="cliSnippet">python vibecode.py vibe-check . --roast</code><button class="btn small" id="copyCli">Copy</button></div>
+    </div>
+  </section>
+
+  <!-- JSON -->
+  <section class="tab-panel" id="tab-json">
+    <div class="card">
+      <h2>📦 JSON Formatter &amp; Validator</h2>
+      <p class="desc">Paste JSON, press <span class="kbd">Ctrl</span>+<span class="kbd">Enter</span> to format. Everything runs locally.</p>
+      <div class="grid2">
+        <div>
+          <label class="lbl" for="jsonInput">Input</label>
+          <textarea id="jsonInput" placeholder='{"hello": "world"}' spellcheck="false"></textarea>
+          <div class="btnrow">
+            <button class="btn primary" id="jsonFormat">✨ Format</button>
+            <button class="btn" id="jsonMinify">🗜 Minify</button>
+            <button class="btn" id="jsonValidate">✔ Validate</button>
+            <button class="btn" id="jsonSample">🎲 Sample</button>
+            <button class="btn danger" id="jsonClear">Clear</button>
+          </div>
+        </div>
+        <div>
+          <label class="lbl">Output</label>
+          <pre class="output" id="jsonOutput">— result appears here —</pre>
+          <div class="btnrow">
+            <button class="btn small" id="jsonCopy">📋 Copy</button>
+            <button class="btn small" id="jsonDownload">⬇ Download</button>
+          </div>
+          <div class="status info" id="jsonStatus"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REGEX -->
+  <section class="tab-panel" id="tab-regex">
+    <div class="card">
+      <h2>🔍 Regex Tester</h2>
+      <p class="desc">Live match highlighting with capture groups. Powered by your browser's RegExp engine.</p>
+      <label class="lbl" for="rxPattern">Pattern</label>
+      <input type="text" id="rxPattern" placeholder="(\w+)@(\w+)\.(\w+)" spellcheck="false" style="font-family:ui-monospace,monospace">
+      <div class="checks" id="rxFlags">
+        <label><input type="checkbox" value="g" checked> global (g)</label>
+        <label><input type="checkbox" value="i"> insensitive (i)</label>
+        <label><input type="checkbox" value="m"> multiline (m)</label>
+        <label><input type="checkbox" value="s"> dotAll (s)</label>
+      </div>
+      <label class="lbl" for="rxText">Test string</label>
+      <textarea id="rxText" spellcheck="false" style="min-height:120px" placeholder="mail me at ada@lovelace.dev or grace@hopper.dev"></textarea>
+      <div class="btnrow">
+        <button class="btn primary" id="rxTest">▶ Test live</button>
+        <button class="btn" id="rxSample">🎲 Sample</button>
+        <button class="btn danger" id="rxClear">Clear</button>
+      </div>
+      <div class="status info" id="rxStatus"></div>
+      <label class="lbl">Highlighted</label>
+      <pre class="output" id="rxOutput">— matches appear here —</pre>
+      <label class="lbl">Matches &amp; groups</label>
+      <div class="rx-list" id="rxList"><div>No matches yet.</div></div>
+      <label class="lbl">Replace <span style="color:var(--muted)">(same pattern &amp; flags — $1, $2… for groups, $&amp; for full match)</span></label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input type="text" id="rxRepl" placeholder="[$1] <$&>" spellcheck="false" style="font-family:ui-monospace,monospace;flex:1;min-width:200px">
+        <button class="btn" id="rxReplace">🔁 Replace</button>
+      </div>
+      <pre class="output" id="rxReplOut" style="margin-top:10px">— replacement appears here —</pre>
+      <div class="status info" id="rxReplStatus"></div>
+    </div>
+  </section>
+
+  <!-- BASE64 -->
+  <section class="tab-panel" id="tab-base64">
+    <div class="card">
+      <h2>🔐 Base64 Encoder / Decoder</h2>
+      <p class="desc">Unicode-safe — Cyrillic, CJK and emoji all survive the round-trip.</p>
+      <div class="grid2">
+        <div>
+          <label class="lbl" for="b64Input">Input</label>
+          <textarea id="b64Input" placeholder="Hello, Vibe! Привет 🌊" spellcheck="false"></textarea>
+          <div class="btnrow">
+            <button class="btn primary" id="b64Encode">🔒 Encode →</button>
+            <button class="btn primary" id="b64Decode">🔓 Decode →</button>
+            <button class="btn danger" id="b64Clear">Clear</button>
+          </div>
+        </div>
+        <div>
+          <label class="lbl">Output</label>
+          <pre class="output" id="b64Output">— result appears here —</pre>
+          <div class="btnrow"><button class="btn small" id="b64Copy">📋 Copy</button></div>
+          <div class="status info" id="b64Status"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PASSWORD -->
+  <section class="tab-panel" id="tab-password">
+    <div class="card">
+      <h2>🎲 Secure Password Generator</h2>
+      <p class="desc">Uses <span class="kbd">crypto.getRandomValues()</span> — never <span class="kbd">Math.random()</span>. Generated locally, never leaves your device.</p>
+      <label class="lbl" for="pwLength">Length: <b id="pwLengthVal">20</b></label>
+      <input type="range" id="pwLength" min="4" max="64" value="20">
+      <div class="checks">
+        <label><input type="checkbox" id="pwUpper" checked> A–Z</label>
+        <label><input type="checkbox" id="pwLower" checked> a–z</label>
+        <label><input type="checkbox" id="pwDigits" checked> 0–9</label>
+        <label><input type="checkbox" id="pwSymbols" checked> !@#$…</label>
+      </div>
+      <div class="btnrow">
+        <button class="btn primary" id="pwGen">🎲 Generate</button>
+        <button class="btn" id="pwCopy">📋 Copy</button>
+      </div>
+      <div class="pw-out" id="pwOut">— press Generate —</div>
+      <div class="meter"><div id="pwMeter"></div></div>
+      <div class="status info" id="pwStatus"></div>
+    </div>
+  </section>
+
+  <!-- POMODORO -->
+  <section class="tab-panel" id="tab-pomodoro">
+    <div class="card">
+      <h2>🍅 Pomodoro Focus Timer</h2>
+      <p class="desc">25 minutes of deep work, 5 minutes of touching grass. Repeat until legendary.</p>
+      <div class="pomo-wrap">
+        <div class="ringbox">
+          <svg class="ring" viewBox="0 0 120 120">
+            <defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#f472b6"/>
+            </linearGradient></defs>
+            <circle class="ring-bg" cx="60" cy="60" r="54"/>
+            <circle class="ring-fg" id="pomoRing" cx="60" cy="60" r="54"/>
+          </svg>
+          <div class="ring-center"><div class="ring-time" id="pomoTime">25:00</div><div class="ring-mode" id="pomoMode">focus</div></div>
+        </div>
+        <div style="flex:1;min-width:240px">
+          <div class="mode-btns">
+            <button class="btn small primary" data-pmode="focus">🎯 Focus</button>
+            <button class="btn small" data-pmode="short">☕ Short break</button>
+            <button class="btn small" data-pmode="long">🌴 Long break</button>
+          </div>
+          <div class="numrow">
+            <div><label class="lbl">Focus (min)</label><input type="number" id="pomoFocusMin" value="25" min="1" max="180"></div>
+            <div><label class="lbl">Short (min)</label><input type="number" id="pomoShortMin" value="5" min="1" max="60"></div>
+            <div><label class="lbl">Long (min)</label><input type="number" id="pomoLongMin" value="15" min="1" max="90"></div>
+          </div>
+          <div class="btnrow">
+            <button class="btn primary" id="pomoToggle">▶ Start</button>
+            <button class="btn" id="pomoReset">↺ Reset</button>
+            <button class="btn" id="pomoSkip">⏭ Skip</button>
+          </div>
+          <label class="lbl">Completed focus sessions</label>
+          <div class="dots" id="pomoDots"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+          <div class="status info" id="pomoStatus">Ready when you are. 🫡</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SORTING -->
+  <section class="tab-panel" id="tab-sorting">
+    <div class="card">
+      <h2>📊 Sorting Visualizer</h2>
+      <p class="desc">Watch classic algorithms sort in real time. <span style="color:var(--yellow)">■</span> comparing, <span style="color:var(--pink)">■</span> swapping, <span style="color:var(--green)">■</span> sorted.</p>
+      <div class="grid2">
+        <div>
+          <label class="lbl" for="sortAlgo">Algorithm</label>
+          <select id="sortAlgo">
+            <option value="bubble">Bubble sort (O(n²))</option>
+            <option value="selection">Selection sort (O(n²))</option>
+            <option value="insertion">Insertion sort (O(n²))</option>
+            <option value="quick">Quick sort (O(n log n)) ⚡</option>
+            <option value="merge">Merge sort (O(n log n)) 🌊</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl" for="sortSize">Bars: <b id="sortSizeVal">60</b></label>
+          <input type="range" id="sortSize" min="10" max="120" value="60">
+          <label class="lbl" for="sortSpeed">Speed: <b id="sortSpeedVal">60</b></label>
+          <input type="range" id="sortSpeed" min="1" max="100" value="60">
+        </div>
+      </div>
+      <div class="btnrow">
+        <button class="btn primary" id="sortRun">▶ Sort!</button>
+        <button class="btn" id="sortShuffle">🔀 Shuffle</button>
+        <button class="btn" id="sortRace">🏁 Race all</button>
+      </div>
+      <div id="raceOut" style="margin-top:4px"></div>
+      <div id="sortBars"></div>
+      <div class="sort-stats"><span>Comparisons: <b id="sortCmp">0</b></span><span>Swaps: <b id="sortSwp">0</b></span><span id="sortDone"></span></div>
+    </div>
+  </section>
+
+  <!-- MARKDOWN -->
+  <section class="tab-panel" id="tab-markdown">
+    <div class="card">
+      <h2>📝 Markdown Preview</h2>
+      <p class="desc">Live preview with a built-in mini parser — headers, lists, code, quotes, links. No libraries.</p>
+      <div class="grid2">
+        <div>
+          <label class="lbl" for="mdInput">Markdown</label>
+          <textarea id="mdInput" spellcheck="false" style="min-height:300px" placeholder="# Hello"></textarea>
+          <div class="btnrow">
+            <button class="btn" id="mdSample">🎲 Sample</button>
+            <button class="btn" id="mdCopyHtml">📋 Copy HTML</button>
+            <button class="btn danger" id="mdClear">Clear</button>
+          </div>
+        </div>
+        <div>
+          <label class="lbl">Preview</label>
+          <div class="md-preview" id="mdPreview"></div>
+          <div class="status info" id="mdStatus"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COLORS -->
+  <section class="tab-panel" id="tab-colors">
+    <div class="card">
+      <h2>🎨 Palette Generator</h2>
+      <p class="desc">Harmonious palettes from color theory. Click any swatch to copy its hex.</p>
+      <label class="lbl" for="palScheme">Scheme</label>
+      <select id="palScheme" style="max-width:280px">
+        <option value="analogous">Analogous (neighbors)</option>
+        <option value="complementary">Complementary (opposites)</option>
+        <option value="triadic">Triadic (triangle)</option>
+        <option value="mono">Monochromatic (shades)</option>
+        <option value="random">Chaos (random) 🎲</option>
+      </select>
+      <div class="btnrow"><button class="btn primary" id="palGen">✨ Generate</button></div>
+      <div class="swatches" id="palOut"></div>
+    </div>
+    <div class="card">
+      <h2>🌓 Contrast Checker (WCAG)</h2>
+      <p class="desc">Check text/background contrast ratio. AA needs ≥ 4.5:1 for normal text.</p>
+      <div class="contrast-box">
+        <div><label class="lbl">Text</label><input type="color" id="ccFg" value="#e8edf7"></div>
+        <div><label class="lbl">Background</label><input type="color" id="ccBg" value="#070b16"></div>
+        <div><label class="lbl">Ratio</label><div class="ratio" id="ccRatio">–</div></div>
+        <div><label class="lbl">Normal text</label><div><span class="badge" id="ccAA">AA</span> <span class="badge" id="ccAAA">AAA</span></div></div>
+        <div><label class="lbl">Large text</label><div><span class="badge" id="ccAALarge">AA-large</span></div></div>
+      </div>
+      <pre class="output" id="ccPreview" style="margin-top:14px">The quick brown fox jumps over the lazy dog. 1234567890</pre>
+    </div>
+    <div class="card">
+      <h2>🌅 Gradient Builder</h2>
+      <p class="desc">Pick two colors and an angle — grab the CSS.</p>
+      <div class="contrast-box">
+        <div><label class="lbl">From</label><input type="color" id="grA" value="#22d3ee"></div>
+        <div><label class="lbl">To</label><input type="color" id="grB" value="#f472b6"></div>
+        <div style="flex:1;min-width:160px"><label class="lbl">Angle: <b id="grAngleVal">135°</b></label><input type="range" id="grAngle" min="0" max="360" value="135"></div>
+      </div>
+      <div class="grad-preview" id="grPreview"></div>
+      <div class="snippet" style="margin-top:12px"><code id="grCode"></code><button class="btn small" id="grCopy">Copy</button></div>
+      <div class="preset-row" id="grPresets"></div>
+    </div>
+  </section>
+
+  <!-- CRON -->
+  <section class="tab-panel" id="tab-cron">
+    <div class="card">
+      <h2>⏰ Cron Expression Parser</h2>
+      <p class="desc">Paste a cron expression — get a human description and upcoming runs. Standard 5-field format.</p>
+      <label class="lbl" for="cronExpr">Expression <span style="color:var(--muted)">(minute hour day month weekday)</span></label>
+      <input type="text" id="cronExpr" value="*/15 9-17 * * MON-FRI" spellcheck="false" style="font-family:ui-monospace,monospace">
+      <div class="btnrow" id="cronPresets">
+        <button class="btn small" data-cron="* * * * *">Every minute</button>
+        <button class="btn small" data-cron="0 9 * * MON">Monday 9:00</button>
+        <button class="btn small" data-cron="30 2 1 * *">Monthly 1st</button>
+        <button class="btn small" data-cron="0 0 * * 0">Sunday midnight</button>
+      </div>
+      <div class="status info" id="cronStatus"></div>
+      <label class="lbl">Means</label>
+      <pre class="output" id="cronDesc">—</pre>
+      <label class="lbl">Next 5 runs (your timezone)</label>
+      <div class="cron-next" id="cronNext"></div>
+    </div>
+  </section>
+
+  <!-- JWT -->
+  <section class="tab-panel" id="tab-jwt">
+    <div class="card">
+      <h2>🔑 JWT Decoder &amp; Verifier</h2>
+      <p class="desc">Decode header and payload, inspect claims (<span class="kbd">exp</span> <span class="kbd">iat</span> shown as dates), optionally verify HS256 with your secret. Tokens never leave this page.</p>
+      <label class="lbl" for="jwtToken">Token</label>
+      <textarea id="jwtToken" spellcheck="false" style="min-height:90px" placeholder="eyJhbGciOi..."></textarea>
+      <div class="btnrow">
+        <button class="btn primary" id="jwtDecode">🔓 Decode</button>
+        <button class="btn" id="jwtSample">🎲 Sample</button>
+        <button class="btn danger" id="jwtClear">Clear</button>
+      </div>
+      <div class="status info" id="jwtStatus"></div>
+      <div class="grid2">
+        <div><label class="lbl">Header</label><pre class="output" id="jwtHeader">—</pre></div>
+        <div><label class="lbl">Payload</label><pre class="output" id="jwtPayload">—</pre></div>
+      </div>
+      <label class="lbl">Claims</label>
+      <table class="kv" id="jwtClaims"><tr><td>—</td><td>decode a token first</td></tr></table>
+      <label class="lbl" for="jwtSecret">Verify HS256 signature (optional)</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input type="text" id="jwtSecret" placeholder="secret" spellcheck="false" style="font-family:ui-monospace,monospace;flex:1;min-width:200px">
+        <button class="btn" id="jwtVerify">✔ Verify</button>
+      </div>
+      <div class="status info" id="jwtVerifyStatus"></div>
+    </div>
+    <div class="card">
+      <h2>✍️ Sign a test token (HS256)</h2>
+      <p class="desc">Craft a payload, sign it, get a test token. For local experiments only!</p>
+      <label class="lbl" for="jwtNewPayload">Payload (JSON)</label>
+      <textarea id="jwtNewPayload" spellcheck="false" style="min-height:100px">{"sub": "42", "name": "Ada", "admin": true}</textarea>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <input type="text" id="jwtNewSecret" value="dev-secret" spellcheck="false" style="font-family:ui-monospace,monospace;flex:1;min-width:160px" placeholder="secret">
+        <button class="btn primary" id="jwtSign">✍️ Sign token</button>
+        <button class="btn" id="jwtUseNew">⬆ Use in decoder ⬆</button>
+      </div>
+      <pre class="output" id="jwtNewOut" style="margin-top:10px">— your token appears here —</pre>
+      <div class="btnrow"><button class="btn small" id="jwtNewCopy">📋 Copy token</button></div>
+    </div>
+  </section>
+
+  <!-- LOREM -->
+  <section class="tab-panel" id="tab-lorem">
+    <div class="card">
+      <h2>📝 Lorem Ipsum Generator</h2>
+      <p class="desc">Classic placeholder text for your beautiful mockups.</p>
+      <div class="numrow" style="max-width:460px">
+        <div><label class="lbl">Paragraphs</label><input type="number" id="loremP" value="3" min="1" max="20"></div>
+        <div style="align-self:end"><button class="btn primary" id="loremGen">✨ Generate</button></div>
+        <div style="align-self:end"><button class="btn" id="loremCopy">📋 Copy</button></div>
+      </div>
+      <pre class="output" id="loremOut" style="margin-top:12px;white-space:pre-wrap">— press Generate —</pre>
+    </div>
+  </section>
+
+  <!-- CASE -->
+  <section class="tab-panel" id="tab-case">
+    <div class="card">
+      <h2>Aa Case Converter</h2>
+      <p class="desc">Convert between naming conventions. Click any result to copy it.</p>
+      <label class="lbl" for="caseInput">Input</label>
+      <input type="text" id="caseInput" value="ship Good Vibes fast" spellcheck="false">
+      <div class="case-grid" id="caseGrid"></div>
+    </div>
+  </section>  <!-- UNIX -->
+  <section class="tab-panel" id="tab-unix">
+    <div class="card">
+      <h2>⏱ Unix Time Converter</h2>
+      <p class="desc">Convert between Unix timestamps and human dates. Current time ticks below.</p>
+      <label class="lbl">Now (Unix timestamp, UTC)</label>
+      <div class="snippet"><code id="unixNow">—</code><button class="btn small" id="unixNowCopy">Copy</button></div>
+      <div class="grid2" style="margin-top:12px">
+        <div>
+          <label class="lbl" for="unixIn">Timestamp → date</label>
+          <input type="text" id="unixIn" placeholder="1780000000 or 1780000000000" spellcheck="false" style="font-family:ui-monospace,monospace">
+          <div class="btnrow"><button class="btn primary" id="unixToDate">→ Date</button></div>
+          <pre class="output" id="unixDateOut" style="margin-top:10px">—</pre>
+        </div>
+        <div>
+          <label class="lbl" for="unixDateIn">Date → timestamp</label>
+          <input type="text" id="unixDateIn" placeholder="2026-09-09 19:30" spellcheck="false" style="font-family:ui-monospace,monospace">
+          <div class="btnrow"><button class="btn primary" id="unixToTs">→ Timestamp</button></div>
+          <pre class="output" id="unixTsOut" style="margin-top:10px">—</pre>
+        </div>
+      </div>
+      <div class="status info" id="unixStatus"></div>
+    </div>
+  </section>
+
+  <!-- CODECS -->
+  <section class="tab-panel" id="tab-codecs">
+    <div class="card">
+      <h2>🔤 Text Codecs</h2>
+      <p class="desc">URL, HTML entities, ROT13 and slugs — the boring-but-daily stuff.</p>
+      <label class="lbl" for="codecIn">Input</label>
+      <textarea id="codecIn" spellcheck="false" style="min-height:90px" placeholder="Hello, world! Привет 👋"></textarea>
+      <div class="btnrow">
+        <button class="btn small" data-codec="urlenc">URL encode</button>
+        <button class="btn small" data-codec="urldec">URL decode</button>
+        <button class="btn small" data-codec="htmlenc">HTML escape</button>
+        <button class="btn small" data-codec="htmldec">HTML unescape</button>
+        <button class="btn small" data-codec="rot13">ROT13</button>
+        <button class="btn small" data-codec="slug">slugify</button>
+      </div>
+      <label class="lbl">Output</label>
+      <pre class="output" id="codecOut">— pick a codec —</pre>
+      <div class="btnrow"><button class="btn small" id="codecCopy">📋 Copy</button></div>
+      <div class="status info" id="codecStatus"></div>
+    </div>
+  </section>
+  <section class="tab-panel" id="tab-diff">
+    <div class="card">
+      <h2>🔀 Text diff checker</h2>
+      <p class="desc">Line-by-line diff (LCS). Paste the original and the modified text — diff updates live.</p>
+      <div class="grid2">
+        <div>
+          <label class="lbl" for="dfOld">Original</label>
+          <textarea id="dfOld" rows="8" placeholder="old text…" spellcheck="false"></textarea>
+        </div>
+        <div>
+          <label class="lbl" for="dfNew">Modified</label>
+          <textarea id="dfNew" rows="8" placeholder="new text…" spellcheck="false"></textarea>
+        </div>
+      </div>
+      <div class="btnrow">
+        <button class="btn primary" id="dfSwap">⇄ Swap</button>
+        <button class="btn" id="dfSample">🎲 Sample</button>
+        <button class="btn" id="dfClear">🧹 Clear</button>
+      </div>
+      <div class="status info" id="dfStatus"></div>
+      <div id="dfOut"><div class="dim">Type in both boxes to compare…</div></div>
+    </div>
+  </section>
+  <section class="tab-panel" id="tab-hash">
+    <div class="card">
+      <h2>#️⃣ Hash &amp; UUID generator</h2>
+      <p class="desc">SHA digests via WebCrypto (async) + random v4 UUIDs. Everything stays in your browser.</p>
+      <label class="lbl" for="hxIn">Text to hash</label>
+      <textarea id="hxIn" rows="3" placeholder="type something…" spellcheck="false"></textarea>
+      <div class="status info" id="hxStatus"></div>
+      <div id="hxOut" class="hx-grid"><div class="dim">Type something to hash…</div></div>
+      <h3 style="margin-top:14px">🎲 Random UUID (v4)</h3>
+      <div class="btnrow">
+        <button class="btn primary" id="hxUuidBtn">Generate</button>
+        <button class="btn" id="hxUuidCopy">📋 Copy</button>
+      </div>
+      <input type="text" id="hxUuidOut" readonly placeholder="press Generate…" spellcheck="false" style="font-family:ui-monospace,monospace">
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span>✨ <b>VibeCode Playground</b> — single file, zero deps, works offline.</span>
+  <span class="spacer"></span>
+  <span>Save this page (Ctrl+S) and keep it forever 💾</span>
+</footer>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+/* ============================== helpers ============================== */
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+let toastTimer = null;
+function toast(msg){
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+async function copyText(text, label){
+  try { await navigator.clipboard.writeText(text); }
+  catch(e){
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch(_){} ta.remove();
+  }
+  toast((label || 'Copied') + ' 📋');
+}
+function setStatus(el, msg, kind){ el.textContent = msg; el.className = 'status ' + (kind || 'info'); }
+
+/* ============================== tabs ============================== */
+function switchTab(name){
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+  try { localStorage.setItem('vibe-tab', name); } catch(e){}
+  if(history.replaceState) history.replaceState(null, '', '#' + name);
+}
+document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+document.querySelectorAll('[data-goto]').forEach(el => el.addEventListener('click', () => {
+  switchTab(el.dataset.goto);
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}));
+$('featCli').addEventListener('click', () => { toast('See the snippet below — grab vibecode.py 💻'); });
+$('copyCli').addEventListener('click', () => copyText($('cliSnippet').textContent, 'Command copied'));
+
+/* typing effect */
+(function(){
+  const phrases = ['> formatting your JSON…', '> testing your regex…', '> timing your pomodoro…', '> sorting your arrays…', '> shipping good vibes…'];
+  const el = $('typing'); let pi = 0, ci = 0, deleting = false;
+  (function tick(){
+    const cur = phrases[pi];
+    el.textContent = cur.slice(0, ci);
+    if(!deleting && ci < cur.length){ ci++; setTimeout(tick, 55); }
+    else if(!deleting){ deleting = true; setTimeout(tick, 1400); }
+    else if(ci > 0){ ci--; setTimeout(tick, 22); }
+    else { deleting = false; pi = (pi + 1) % phrases.length; setTimeout(tick, 300); }
+  })();
+})();
+
+/* ============================== JSON ============================== */
+const JSON_SAMPLE = { project: 'VibeCode', version: '1.0.0', awesome: true, tools: ['json', 'regex', 'pomodoro'], meta: { files: 1, deps: 0 } };
+function jsonProcess(mode){
+  const raw = $('jsonInput').value.trim();
+  if(!raw){ setStatus($('jsonStatus'), 'Paste some JSON first 🙂', 'info'); return; }
+  try {
+    const obj = JSON.parse(raw);
+    if(mode === 'validate'){ setStatus($('jsonStatus'), '✔ Valid JSON — ' + Object.keys(obj).length + ' top-level key(s)', 'ok'); return; }
+    const out = mode === 'minify' ? JSON.stringify(obj) : JSON.stringify(obj, null, 2);
+    $('jsonOutput').textContent = out;
+    setStatus($('jsonStatus'), '✔ Done — ' + out.length + ' chars', 'ok');
+  } catch(e){ setStatus($('jsonStatus'), '✖ Invalid JSON: ' + e.message, 'bad'); }
+}
+$('jsonFormat').addEventListener('click', () => jsonProcess('format'));
+$('jsonMinify').addEventListener('click', () => jsonProcess('minify'));
+$('jsonValidate').addEventListener('click', () => jsonProcess('validate'));
+$('jsonSample').addEventListener('click', () => { $('jsonInput').value = JSON.stringify(JSON_SAMPLE); jsonProcess('format'); });
+$('jsonClear').addEventListener('click', () => { $('jsonInput').value = ''; $('jsonOutput').textContent = '— result appears here —'; setStatus($('jsonStatus'), '', 'info'); });
+$('jsonCopy').addEventListener('click', () => copyText($('jsonOutput').textContent, 'JSON copied'));
+$('jsonDownload').addEventListener('click', () => {
+  const blob = new Blob([$('jsonOutput').textContent], {type: 'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'formatted.json'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+});
+$('jsonInput').addEventListener('keydown', e => { if((e.ctrlKey || e.metaKey) && e.key === 'Enter') jsonProcess('format'); });
+
+/* ============================== Regex ============================== */
+const RX_SAMPLE = { pattern: '(\\w+)@(\\w+)\\.(\\w+)', text: 'mail me at ada@lovelace.dev or grace@hopper.dev — thanks!' };
+function rxTest(){
+  const pattern = $('rxPattern').value;
+  const flags = Array.from(document.querySelectorAll('#rxFlags input:checked')).map(c => c.value).join('');
+  if(!pattern){ setStatus($('rxStatus'), 'Enter a pattern 🙂', 'info'); return; }
+  let re;
+  try { re = new RegExp(pattern, flags.includes('g') ? flags : flags + 'g'); }
+  catch(e){ setStatus($('rxStatus'), '✖ Bad pattern: ' + e.message, 'bad'); return; }
+  const text = $('rxText').value;
+  const matches = [];
+  let m, guard = 0;
+  re.lastIndex = 0;
+  while((m = re.exec(text)) !== null && guard < 500){
+    matches.push({ index: m.index, text: m[0], groups: m.slice(1) });
+    guard++;
+    if(m[0] === '') re.lastIndex++; // avoid infinite loop on empty matches
+  }
+  let html = '', pos = 0;
+  for(const mt of matches){
+    html += esc(text.slice(pos, mt.index)) + '<mark>' + (esc(mt.text) || '∅') + '</mark>';
+    pos = mt.index + mt.text.length;
+  }
+  html += esc(text.slice(pos));
+  $('rxOutput').innerHTML = html || '(empty string)';
+  if(matches.length){
+    setStatus($('rxStatus'), '✔ ' + matches.length + ' match(es)' + (guard >= 500 ? ' (showing first 500)' : ''), 'ok');
+    $('rxList').innerHTML = matches.slice(0, 30).map((mt, i) =>
+      '<div><b>#' + i + '</b> @' + mt.index + ' <b>' + esc(mt.text) + '</b>' +
+      (mt.groups.length ? ' → groups: [' + mt.groups.map(g => esc(g === undefined ? '—' : g)).join(' | ') + ']' : '') + '</div>'
+    ).join('');
+  } else {
+    setStatus($('rxStatus'), 'No matches. The regex giveth nothing today.', 'info');
+    $('rxList').innerHTML = '<div>No matches yet.</div>';
+  }
+}
+['rxPattern', 'rxText'].forEach(id => $(id).addEventListener('input', rxTest));
+document.querySelectorAll('#rxFlags input').forEach(c => c.addEventListener('change', rxTest));
+$('rxTest').addEventListener('click', rxTest);
+$('rxSample').addEventListener('click', () => { $('rxPattern').value = RX_SAMPLE.pattern; $('rxText').value = RX_SAMPLE.text; rxTest(); });
+$('rxClear').addEventListener('click', () => { $('rxPattern').value = ''; $('rxText').value = ''; rxTest(); });
+
+/* ============================== Base64 ============================== */
+const te = new TextEncoder(), td = new TextDecoder();
+function b64encodeUnicode(s){
+  const bytes = te.encode(s);
+  let bin = '';
+  for(let i = 0; i < bytes.length; i += 0x8000)
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+function b64decodeUnicode(s){
+  const bin = atob(s.trim());
+  const bytes = new Uint8Array(bin.length);
+  for(let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return td.decode(bytes);
+}
+$('b64Encode').addEventListener('click', () => {
+  try { $('b64Output').textContent = b64encodeUnicode($('b64Input').value); setStatus($('b64Status'), '✔ Encoded', 'ok'); }
+  catch(e){ setStatus($('b64Status'), '✖ ' + e.message, 'bad'); }
+});
+$('b64Decode').addEventListener('click', () => {
+  const raw = $('b64Input').value.trim();
+  if(!/^[A-Za-z0-9+/=\s]*$/.test(raw) || raw.replace(/\s/g, '').length % 4 !== 0){
+    setStatus($('b64Status'), '✖ That does not look like Base64', 'bad'); return;
+  }
+  try { $('b64Output').textContent = b64decodeUnicode(raw); setStatus($('b64Status'), '✔ Decoded', 'ok'); }
+  catch(e){ setStatus($('b64Status'), '✖ Cannot decode: ' + e.message, 'bad'); }
+});
+$('b64Clear').addEventListener('click', () => { $('b64Input').value = ''; $('b64Output').textContent = '— result appears here —'; setStatus($('b64Status'), '', 'info'); });
+$('b64Copy').addEventListener('click', () => copyText($('b64Output').textContent, 'Copied'));
+
+/* ============================== Password ============================== */
+function pwGenerate(){
+  let pool = '';
+  if($('pwUpper').checked) pool += 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  if($('pwLower').checked) pool += 'abcdefghijkmnopqrstuvwxyz';
+  if($('pwDigits').checked) pool += '23456789';
+  if($('pwSymbols').checked) pool += '!@#$%^&*()-_=+[]{};:,.<>?/';
+  if(!pool){ setStatus($('pwStatus'), '✖ Pick at least one character set', 'bad'); return; }
+  const len = parseInt($('pwLength').value, 10);
+  const rnd = new Uint32Array(len);
+  crypto.getRandomValues(rnd);
+  let pw = '';
+  for(let i = 0; i < len; i++) pw += pool[rnd[i] % pool.length];
+  $('pwOut').textContent = pw;
+  const bits = Math.round(len * Math.log2(pool.length));
+  $('pwMeter').style.width = Math.min(100, bits / 1.3) + '%';
+  const label = bits < 50 ? 'weak 😬' : bits < 80 ? 'decent 😐' : bits < 110 ? 'strong 😎' : 'godlike 🔥';
+  setStatus($('pwStatus'), '✔ ~' + bits + ' bits of entropy — ' + label, 'ok');
+}
+$('pwLength').addEventListener('input', e => { $('pwLengthVal').textContent = e.target.value; });
+$('pwGen').addEventListener('click', pwGenerate);
+$('pwCopy').addEventListener('click', () => copyText($('pwOut').textContent, 'Password copied'));
+
+/* ============================== Pomodoro ============================== */
+const pomo = { mode: 'focus', total: 25 * 60, left: 25 * 60, running: false, id: null, endAt: 0, done: 0 };
+const RING_C = 339.292;
+function fmt(s){ s = Math.max(0, Math.round(s)); const m = Math.floor(s / 60), r = s % 60; return String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0'); }
+function pomoRender(){
+  $('pomoTime').textContent = fmt(pomo.left);
+  $('pomoMode').textContent = pomo.mode === 'focus' ? 'focus' : pomo.mode === 'short' ? 'short break' : 'long break';
+  $('pomoRing').style.strokeDashoffset = String(RING_C * (1 - pomo.left / pomo.total));
+  document.title = fmt(pomo.left) + ' • ' + pomo.mode + ' — VibeCode';
+}
+function pomoBeep(times){
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    times = times || 3;
+    for(let i = 0; i < times; i++){
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = 880; o.type = 'sine';
+      const t = ctx.currentTime + i * 0.35;
+      g.gain.setValueAtTime(0.001, t);
+      g.gain.exponentialRampToValueAtTime(0.4, t + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+      o.start(t); o.stop(t + 0.32);
+    }
+  } catch(e){}
+}
+function pomoSetMode(mode){
+  pomo.mode = mode;
+  const mins = mode === 'focus' ? parseInt($('pomoFocusMin').value, 10) || 25
+    : mode === 'short' ? parseInt($('pomoShortMin').value, 10) || 5
+    : parseInt($('pomoLongMin').value, 10) || 15;
+  pomo.total = mins * 60; pomo.left = pomo.total;
+  pomoStop(false);
+  document.querySelectorAll('[data-pmode]').forEach(b => b.classList.toggle('primary', b.dataset.pmode === mode));
+  pomoRender();
+}
+function pomoTick(){
+  pomo.left = Math.max(0, Math.round((pomo.endAt - Date.now()) / 1000));
+  pomoRender();
+  if(pomo.left <= 0){
+    pomoStop(false);
+    pomoBeep(3);
+    pomoNotify(pomo.mode === 'focus' ? 'Focus complete! Take a break 🌿' : 'Break over — back to glory 💪');
+    if(pomo.mode === 'focus'){
+      pomo.done++;
+      const dots = document.querySelectorAll('#pomoDots .dot');
+      dots.forEach((d, i) => d.classList.toggle('done', i < pomo.done % 4 || pomo.done > 0 && (pomo.done % 4 === 0)));
+      if(pomo.done > 0 && pomo.done % 4 === 0) dots.forEach(d => d.classList.add('done'));
+      setStatus($('pomoStatus'), '✔ Focus complete! Take a ' + (pomo.done % 4 === 0 ? 'long' : 'short') + ' break 🌿', 'ok');
+      pomoSetMode(pomo.done % 4 === 0 ? 'long' : 'short');
+    } else {
+      setStatus($('pomoStatus'), '✔ Break over. Back to glory 💪', 'ok');
+      pomoSetMode('focus');
+    }
+    toast('Timer finished! ⏰');
+  }
+}
+function pomoStart(){
+  if(pomo.running) return;
+  pomoAskNotify();
+  pomo.running = true;
+  pomo.endAt = Date.now() + pomo.left * 1000;
+  pomo.id = setInterval(pomoTick, 250);
+  $('pomoToggle').textContent = '⏸ Pause';
+  setStatus($('pomoStatus'), pomo.mode === 'focus' ? 'Focusing… you got this 🎯' : 'Relaxing… breathe 🌊', 'info');
+}
+function pomoStop(updateBtn){
+  pomo.running = false;
+  clearInterval(pomo.id);
+  if(updateBtn !== false) $('pomoToggle').textContent = '▶ Start';
+}
+$('pomoToggle').addEventListener('click', () => {
+  if(pomo.running){ pomoStop(); setStatus($('pomoStatus'), 'Paused. The grind waits for no one ⏸', 'info'); }
+  else pomoStart();
+});
+$('pomoReset').addEventListener('click', () => { pomoSetMode(pomo.mode); setStatus($('pomoStatus'), 'Reset. Fresh start ✨', 'info'); });
+$('pomoSkip').addEventListener('click', () => {
+  pomoStop();
+  pomoSetMode(pomo.mode === 'focus' ? 'short' : 'focus');
+  setStatus($('pomoStatus'), 'Skipped ⏭', 'info');
+});
+document.querySelectorAll('[data-pmode]').forEach(b => b.addEventListener('click', () => pomoSetMode(b.dataset.pmode)));
+['pomoFocusMin', 'pomoShortMin', 'pomoLongMin'].forEach(id => $(id).addEventListener('change', () => pomoSetMode(pomo.mode)));
+pomoRender();
+
+/* ============================== Sorting ============================== */
+let sArr = [], sRunning = false, sCmp = 0, sSwp = 0;
+function sDelay(){ return 205 - parseInt($('sortSpeed').value, 10) * 2; }
+function sBuild(){
+  const n = parseInt($('sortSize').value, 10);
+  sArr = Array.from({length: n}, (_, i) => 5 + Math.round((i + 1) / n * 95));
+  sShuffle(false);
+}
+function sShuffle(rerender){
+  for(let i = sArr.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [sArr[i], sArr[j]] = [sArr[j], sArr[i]];
+  }
+  sCmp = 0; sSwp = 0; $('sortCmp').textContent = '0'; $('sortSwp').textContent = '0'; $('sortDone').textContent = '';
+  if(rerender !== false) sRender(-1, -1, false);
+}
+function sRender(a, b, done){
+  if(sTurbo) return;
+  const box = $('sortBars');
+  if(box.children.length !== sArr.length){
+    box.innerHTML = '';
+    for(const v of sArr){ const d = document.createElement('div'); d.className = 'sbar'; d.style.height = v + '%'; box.appendChild(d); }
+  }
+  for(let i = 0; i < box.children.length; i++){
+    const d = box.children[i];
+    d.style.height = sArr[i] + '%';
+    d.className = 'sbar' + (done ? ' done' : i === a ? ' cmp' : i === b ? ' swap' : '');
+  }
+}
+function sBump(){ if(sTurbo) return; $('sortCmp').textContent = sCmp; $('sortSwp').textContent = sSwp; }
+let sTurbo = false;
+const sleep = ms => sTurbo ? Promise.resolve() : new Promise(r => setTimeout(r, ms));
+function sSetRunning(on){
+  sRunning = on;
+  ['sortRun', 'sortShuffle', 'sortRace', 'sortAlgo', 'sortSize'].forEach(id => $(id).disabled = on);
+}
+async function sBubble(){
+  const n = sArr.length;
+  for(let i = 0; i < n - 1; i++){
+    let swapped = false;
+    for(let j = 0; j < n - 1 - i; j++){
+      sCmp++; sBump(); sRender(j, j + 1, false); await sleep(sDelay());
+      if(sArr[j] > sArr[j + 1]){ [sArr[j], sArr[j + 1]] = [sArr[j + 1], sArr[j]]; sSwp++; sBump(); swapped = true; }
+    }
+    if(!swapped) break;
+  }
+}
+async function sSelection(){
+  const n = sArr.length;
+  for(let i = 0; i < n - 1; i++){
+    let mn = i;
+    for(let j = i + 1; j < n; j++){
+      sCmp++; sBump(); sRender(mn, j, false); await sleep(sDelay());
+      if(sArr[j] < sArr[mn]) mn = j;
+    }
+    if(mn !== i){ [sArr[i], sArr[mn]] = [sArr[mn], sArr[i]]; sSwp++; sBump(); }
+  }
+}
+async function sInsertion(){
+  const n = sArr.length;
+  for(let i = 1; i < n; i++){
+    const key = sArr[i]; let j = i - 1;
+    while(j >= 0){ sCmp++; sBump(); sRender(j, i, false); await sleep(sDelay()); if(sArr[j] <= key) break; sArr[j + 1] = sArr[j]; sSwp++; j--; }
+    sArr[j + 1] = key; sBump();
+  }
+}
+async function sQuick(lo, hi){
+  if(lo >= hi) return;
+  const pivot = sArr[hi]; let i = lo;
+  for(let j = lo; j < hi; j++){
+    sCmp++; sBump(); sRender(j, hi, false); await sleep(sDelay());
+    if(sArr[j] < pivot){ [sArr[i], sArr[j]] = [sArr[j], sArr[i]]; sSwp++; i++; }
+  }
+  [sArr[i], sArr[hi]] = [sArr[hi], sArr[i]]; sSwp++; sBump();
+  await sQuick(lo, i - 1); await sQuick(i + 1, hi);
+}
+$('sortSize').addEventListener('input', e => { $('sortSizeVal').textContent = e.target.value; if(!sRunning) sBuild(); });
+$('sortSpeed').addEventListener('input', e => { $('sortSpeedVal').textContent = e.target.value; });
+$('sortShuffle').addEventListener('click', () => sShuffle());
+$('sortRun').addEventListener('click', async () => {
+  if(sRunning) return;
+  sSetRunning(true);
+  $('sortDone').textContent = '';
+  const t0 = performance.now();
+  const algo = $('sortAlgo').value;
+  if(algo === 'bubble') await sBubble();
+  else if(algo === 'selection') await sSelection();
+  else if(algo === 'insertion') await sInsertion();
+  else if(algo === 'merge') await sMerge(0, sArr.length - 1);
+  else await sQuick(0, sArr.length - 1);
+  sRender(-1, -1, true); sBump();
+  $('sortDone').textContent = '✔ Sorted in ' + ((performance.now() - t0) / 1000).toFixed(1) + 's';
+  sSetRunning(false);
+});
+sBuild();
+
+/* ============================== Markdown ============================== */
+const MD_SAMPLE = '# VibeCode Markdown\n\nLive preview with **bold**, *italic* and `inline code`.\n\n## Lists\n\n- ship fast\n- touch grass\n- repeat\n\n1. write code\n2. ???\n3. profit\n\n> Simplicity is the soul of efficiency.\n\n```python\ndef vibe():\n    return "✨"\n```\n\nMade with [VibeCode](https://github.com) — [x] ship it\n';
+function mdInline(s){
+  s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, '<img alt="$1" src="$2">');
+  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  s = s.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/(^|[\s(>])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+  s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+  s = s.replace(/\[x\]/gi, '✅').replace(/\[ \]/g, '⬜');
+  return s;
+}
+function mdRender(){
+  const src = $('mdInput').value;
+  // 1. pull out fenced code blocks
+  const blocks = [];
+  let text = esc(src).replace(/```(\w*)\n([\s\S]*?)```/g, (m, lang, code) => {
+    blocks.push('<pre><code>' + code.replace(/^\n+|\n+$/g, '') + '</code></pre>');
+    return '\u0000' + (blocks.length - 1) + '\u0000';
+  });
+  const lines = text.split('\n');
+  let html = '', inUL = false, inOL = false, inQuote = false;
+  const closeLists = () => {
+    if(inUL){ html += '</ul>'; inUL = false; }
+    if(inOL){ html += '</ol>'; inOL = false; }
+    if(inQuote){ html += '</blockquote>'; inQuote = false; }
+  };
+  for(const line of lines){
+    const t = line.trim();
+    if(/^\u0000\d+\u0000$/.test(t)){ closeLists(); html += blocks[parseInt(t.replace(/\u0000/g, ''), 10)]; continue; }
+    if(!t){ closeLists(); continue; }
+    let m;
+    if((m = t.match(/^(#{1,6})\s+(.*)/))){ closeLists(); const l = m[1].length; html += '<h' + l + '>' + mdInline(m[2]) + '</h' + l + '>'; continue; }
+    if(/^---+$/.test(t)){ closeLists(); html += '<hr>'; continue; }
+    if(t.startsWith('&gt;')){
+      if(!inQuote){ closeLists(); html += '<blockquote>'; inQuote = true; }
+      html += mdInline(t.replace(/^&gt;\s?/, '')) + '<br>';
+      continue;
+    }
+    if((m = t.match(/^[-*]\s+(.*)/))){
+      if(inOL){ html += '</ol>'; inOL = false; } if(inQuote){ html += '</blockquote>'; inQuote = false; }
+      if(!inUL){ html += '<ul>'; inUL = true; }
+      html += '<li>' + mdInline(m[1]) + '</li>'; continue;
+    }
+    if((m = t.match(/^\d+\.\s+(.*)/))){
+      if(inUL){ html += '</ul>'; inUL = false; } if(inQuote){ html += '</blockquote>'; inQuote = false; }
+      if(!inOL){ html += '<ol>'; inOL = false; html += ''; inOL = true; }
+      html += '<li>' + mdInline(m[1]) + '</li>'; continue;
+    }
+    closeLists();
+    html += '<p>' + mdInline(t) + '</p>';
+  }
+  closeLists();
+  $('mdPreview').innerHTML = html || '<p style="color:var(--muted)">— nothing to preview —</p>';
+  const words = src.trim() ? src.trim().split(/\s+/).length : 0;
+  setStatus($('mdStatus'), words + ' word(s)', 'info');
+}
+$('mdInput').addEventListener('input', mdRender);
+$('mdSample').addEventListener('click', () => { $('mdInput').value = MD_SAMPLE; mdRender(); });
+$('mdClear').addEventListener('click', () => { $('mdInput').value = ''; mdRender(); });
+$('mdCopyHtml').addEventListener('click', () => copyText($('mdPreview').innerHTML, 'HTML copied'));
+$('mdInput').value = MD_SAMPLE; mdRender();
+
+/* ============================== Colors ============================== */
+function hslToHex(h, s, l){
+  s /= 100; l /= 100;
+  const k = n => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  const to = x => Math.round(x * 255).toString(16).padStart(2, '0');
+  return '#' + to(f(0)) + to(f(8)) + to(f(4));
+}
+function palGenerate(){
+  const scheme = $('palScheme').value;
+  const base = Math.floor(Math.random() * 360);
+  const sat = 55 + Math.floor(Math.random() * 30);
+  const lit = 50 + Math.floor(Math.random() * 12);
+  let hues;
+  if(scheme === 'analogous') hues = [base - 40, base - 20, base, base + 20, base + 40];
+  else if(scheme === 'complementary') hues = [base, base + 15, base + 180, base + 195, base + 30];
+  else if(scheme === 'triadic') hues = [base, base + 20, base + 120, base + 140, base + 240];
+  else if(scheme === 'mono') hues = [base, base, base, base, base];
+  else hues = Array.from({length: 5}, () => Math.floor(Math.random() * 360));
+  const box = $('palOut'); box.innerHTML = '';
+  hues.forEach((h, i) => {
+    const l = scheme === 'mono' ? 30 + i * 11 : lit + (i % 2 ? -6 : 6);
+    const hex = hslToHex(((h % 360) + 360) % 360, sat, Math.max(12, Math.min(88, l)));
+    const d = document.createElement('div');
+    d.className = 'swatch';
+    d.innerHTML = '<div class="c" style="background:' + hex + '"></div><div class="h">' + hex + '</div>';
+    d.addEventListener('click', () => copyText(hex, hex + ' copied'));
+    box.appendChild(d);
+  });
+}
+$('palGen').addEventListener('click', palGenerate);
+palGenerate();
+function luminance(hex){
+  const c = [1, 3, 5].map(i => {
+    const v = parseInt(hex.substr(i, 2), 16) / 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+}
+function ccUpdate(){
+  const fg = $('ccFg').value, bg = $('ccBg').value;
+  const L1 = luminance(fg), L2 = luminance(bg);
+  const ratio = (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05);
+  $('ccRatio').textContent = ratio.toFixed(2) + ':1';
+  const prev = $('ccPreview');
+  prev.style.color = fg; prev.style.background = bg; prev.style.borderColor = fg;
+  const set = (id, pass) => { const b = $(id); b.classList.toggle('pass', pass); b.classList.toggle('fail', !pass); };
+  set('ccAA', ratio >= 4.5); set('ccAAA', ratio >= 7); set('ccAALarge', ratio >= 3);
+}
+$('ccFg').addEventListener('input', ccUpdate);
+$('ccBg').addEventListener('input', ccUpdate);
+ccUpdate();
+
+/* ============================== Cron ============================== */
+const CRON_MONTHS = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+const CRON_DOW = {sun:0,mon:1,tue:2,wed:3,thu:4,fri:5,sat:6};
+const DOW_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTH_NAMES = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
+function cronOrd(n){ const s = ['th','st','nd','rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
+function cronExpand(field, min, max, names){
+  field = String(field).trim().toLowerCase();
+  if(names) field = field.replace(/[a-z]+/g, m => (names[m] !== undefined ? names[m] : m));
+  const out = new Set();
+  const add = (a, b, step) => { for(let v = a; v <= b; v += step) out.add(v); };
+  for(const part0 of field.split(',')){
+    const part = part0.trim();
+    if(!part) throw new Error('empty part in "' + field + '"');
+    let range = part, step = 1;
+    const slash = part.split('/');
+    if(slash.length > 2) throw new Error('bad step in "' + part + '"');
+    if(slash.length === 2){
+      range = slash[0]; step = parseInt(slash[1], 10);
+      if(!(step >= 1)) throw new Error('bad step in "' + part + '"');
+    }
+    if(range === '' || range === '*'){ add(min, max, step); continue; }
+    const dash = range.split('-');
+    if(dash.length > 2) throw new Error('bad range "' + range + '"');
+    const a = parseInt(dash[0], 10), b = dash.length === 2 ? parseInt(dash[1], 10) : a;
+    if(isNaN(a) || isNaN(b) || a < min || b > max || a > b) throw new Error('out of range ' + min + '-' + max + ': "' + range + '"');
+    add(a, b, step);
+  }
+  if(!out.size) throw new Error('empty field');
+  return out;
+}
+function cronParse(expr){
+  const f = String(expr).trim().split(/\s+/);
+  if(f.length !== 5) throw new Error('expected 5 fields, got ' + f.length);
+  const M = cronExpand(f[0], 0, 59), H = cronExpand(f[1], 0, 23),
+        D = cronExpand(f[2], 1, 31), MO = cronExpand(f[3], 1, 12),
+        W = cronExpand(f[4], 0, 7, CRON_DOW);
+  if(W.has(7)){ W.add(0); W.delete(7); }
+  return {M, H, D, MO, W, domStar: f[2] === '*', dowStar: f[4] === '*'};
+}
+function cronDescribe(c){
+  const sm = [...c.M].sort((a, b) => a - b), sh = [...c.H].sort((a, b) => a - b),
+        sd = [...c.D].sort((a, b) => a - b), smo = [...c.MO].sort((a, b) => a - b),
+        sw = [...c.W].sort((a, b) => a - b);
+  const everyMin = sm.length === 60, everyHour = sh.length === 24;
+  const p2 = n => String(n).padStart(2, '0');
+  let time;
+  if(everyMin && everyHour) time = 'Every minute';
+  else if(everyMin) time = 'Every minute during hour(s) ' + sh.join(', ');
+  else if(sh.length === 1 && sm.length === 1) time = 'At ' + p2(sh[0]) + ':' + p2(sm[0]);
+  else if(sh.length === 1) time = 'At minute(s) ' + sm.join(', ') + ' past ' + p2(sh[0]);
+  else if(sm.length === 1) time = 'At minute ' + sm[0] + ' past ' + sh.length + ' hour(s)';
+  else time = 'At ' + sm.length + ' minute(s) across ' + sh.length + ' hour(s)';
+  let days = '';
+  if(smo.length !== 12) days += ' in ' + smo.map(m => MONTH_NAMES[m]).join(', ');
+  if(!c.domStar && sd.length !== 31) days += ' on day(s) ' + sd.map(cronOrd).join(', ');
+  if(!c.dowStar && sw.length !== 7) days += ' on ' + sw.map(d => DOW_NAMES[d]).join(', ');
+  if(!days) days = ', every day';
+  return time + days;
+}
+function cronMatch(c, dt){
+  if(!c.M.has(dt.getMinutes()) || !c.H.has(dt.getHours()) || !c.MO.has(dt.getMonth() + 1)) return false;
+  const domOk = c.D.has(dt.getDate()), dowOk = c.W.has(dt.getDay());
+  if(c.domStar && c.dowStar) return true;
+  if(c.domStar) return dowOk;
+  if(c.dowStar) return domOk;
+  return domOk || dowOk;
+}
+function cronCompute(expr){
+  const c = cronParse(expr);
+  const runs = [];
+  const dt = new Date();
+  dt.setSeconds(0, 0);
+  dt.setMinutes(dt.getMinutes() + 1);
+  for(let i = 0; i < 525600 && runs.length < 5; i++){
+    if(cronMatch(c, dt)) runs.push(new Date(dt));
+    dt.setMinutes(dt.getMinutes() + 1);
+  }
+  return {desc: cronDescribe(c), runs};
+}
+function cronUpdate(){
+  try {
+    const res = cronCompute($('cronExpr').value);
+    $('cronDesc').textContent = res.desc;
+    setStatus($('cronStatus'), '✔ Valid expression', 'ok');
+    $('cronNext').innerHTML = res.runs.length
+      ? res.runs.map((d, i) => '<div><b>#' + (i + 1) + '</b> ' + esc(d.toLocaleString()) + '</div>').join('')
+      : '<div>No runs in the next year — suspicious schedule 🕵</div>';
+  } catch(e){ setStatus($('cronStatus'), '✖ ' + e.message, 'bad'); $('cronDesc').textContent = '—'; $('cronNext').innerHTML = ''; }
+}
+$('cronExpr').addEventListener('input', cronUpdate);
+document.querySelectorAll('#cronPresets button').forEach(b => b.addEventListener('click', () => { $('cronExpr').value = b.dataset.cron; cronUpdate(); }));
+cronUpdate();
+
+/* ============================== JWT ============================== */
+const JWT_SAMPLE = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
+function b64urlDecode(s){
+  s = String(s).replace(/-/g, '+').replace(/_/g, '/');
+  while(s.length % 4) s += '=';
+  const bin = atob(s);
+  const bytes = new Uint8Array(bin.length);
+  for(let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return td.decode(bytes);
+}
+function b64urlEncode(bytes){
+  let bin = '';
+  for(let i = 0; i < bytes.length; i += 0x8000)
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+let jwtParts = null;
+function jwtDecode(){
+  const raw = $('jwtToken').value.trim();
+  jwtParts = null;
+  setStatus($('jwtVerifyStatus'), '', 'info');
+  if(!raw){ setStatus($('jwtStatus'), 'Paste a token 🙂', 'info'); return; }
+  const parts = raw.split('.');
+  if(parts.length !== 3){ setStatus($('jwtStatus'), '✖ A JWT has 3 parts separated by dots', 'bad'); return; }
+  try {
+    const header = JSON.parse(b64urlDecode(parts[0]));
+    const payload = JSON.parse(b64urlDecode(parts[1]));
+    jwtParts = parts;
+    $('jwtHeader').textContent = JSON.stringify(header, null, 2);
+    $('jwtPayload').textContent = JSON.stringify(payload, null, 2);
+    const now = Math.floor(Date.now() / 1000);
+    let rows = '';
+    for(const k of Object.keys(payload)){
+      const v = payload[k];
+      let extra = '';
+      if((k === 'exp' || k === 'iat' || k === 'nbf') && typeof v === 'number'){
+        extra = ' <span style="color:var(--green)">(' + new Date(v * 1000).toLocaleString() + ')</span>';
+        if(k === 'exp') extra += v < now ? ' <span class="badge fail">expired</span>' : ' <span class="badge pass">valid</span>';
+      }
+      rows += '<tr><td><code>' + esc(k) + '</code></td><td>' + esc(typeof v === 'object' ? JSON.stringify(v) : String(v)) + extra + '</td></tr>';
+    }
+    $('jwtClaims').innerHTML = rows || '<tr><td>—</td><td>empty payload</td></tr>';
+    setStatus($('jwtStatus'), '✔ Decoded — alg: ' + (header.alg || '?'), 'ok');
+  } catch(e){ setStatus($('jwtStatus'), '✖ Cannot decode: ' + e.message, 'bad'); }
+}
+async function jwtVerify(){
+  if(!jwtParts){ setStatus($('jwtVerifyStatus'), 'Decode a token first 🙂', 'info'); return; }
+  const secret = $('jwtSecret').value;
+  if(!secret){ setStatus($('jwtVerifyStatus'), 'Enter the HS256 secret 🙂', 'info'); return; }
+  try {
+    const key = await crypto.subtle.importKey('raw', te.encode(secret), {name: 'HMAC', hash: 'SHA-256'}, false, ['sign']);
+    const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, te.encode(jwtParts[0] + '.' + jwtParts[1])));
+    const ok = b64urlEncode(sig) === jwtParts[2];
+    setStatus($('jwtVerifyStatus'), ok ? '✔ Signature VALID — this token is legit 🎉' : '✖ Signature MISMATCH — wrong secret or tampered token', ok ? 'ok' : 'bad');
+  } catch(e){ setStatus($('jwtVerifyStatus'), '✖ ' + e.message, 'bad'); }
+}
+$('jwtDecode').addEventListener('click', jwtDecode);
+$('jwtVerify').addEventListener('click', jwtVerify);
+$('jwtSample').addEventListener('click', () => { $('jwtToken').value = JWT_SAMPLE; $('jwtSecret').value = 'your-256-bit-secret'; jwtDecode(); });
+$('jwtClear').addEventListener('click', () => {
+  $('jwtToken').value = ''; $('jwtSecret').value = ''; jwtParts = null;
+  $('jwtHeader').textContent = '—'; $('jwtPayload').textContent = '—';
+  $('jwtClaims').innerHTML = '<tr><td>—</td><td>decode a token first</td></tr>';
+  setStatus($('jwtStatus'), '', 'info'); setStatus($('jwtVerifyStatus'), '', 'info');
+});
+
+/* ============================== Lorem ============================== */
+const LOREM_POOL = ('lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex commodo consequat duis aute irure in reprehenderit voluptate velit esse cillum fugiat nulla pariatur excepteur sint occaecat cupidatat non proident sunt culpa qui officia deserunt mollit anim id laborum perspiciatis unde omnis iste natus error voluptatem accusantium doloremque laudantium totam rem aperiam eaque').split(' ');
+function loremBuild(paras){
+  const out = [];
+  for(let p = 0; p < paras; p++){
+    const sentences = [];
+    const n = 3 + Math.floor(Math.random() * 4);
+    for(let s = 0; s < n; s++){
+      const w = 6 + Math.floor(Math.random() * 9), words = [];
+      for(let i = 0; i < w; i++) words.push(LOREM_POOL[Math.floor(Math.random() * LOREM_POOL.length)]);
+      words[0] = words[0][0].toUpperCase() + words[0].slice(1);
+      sentences.push(words.join(' ') + '.');
+    }
+    out.push(sentences.join(' '));
+  }
+  return out.join('\n\n');
+}
+$('loremGen').addEventListener('click', () => {
+  const n = Math.max(1, Math.min(20, parseInt($('loremP').value, 10) || 3));
+  $('loremP').value = n;
+  $('loremOut').textContent = loremBuild(n);
+});
+$('loremCopy').addEventListener('click', () => copyText($('loremOut').textContent, 'Lorem copied'));
+
+/* ============================== Case converter ============================== */
+function caseWords(s){
+  return String(s).replace(/[^A-Za-z0-9]+/g, ' ')
+    .replace(/(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/g, ' ')
+    .trim().split(/\s+/).filter(Boolean).map(w => w.toLowerCase());
+}
+const caseCap = w => w ? w[0].toUpperCase() + w.slice(1) : w;
+function caseConvert(){
+  const words = caseWords($('caseInput').value);
+  const items = [
+    ['camelCase', words.map((w, i) => i ? caseCap(w) : w).join('')],
+    ['PascalCase', words.map(caseCap).join('')],
+    ['snake_case', words.join('_')],
+    ['kebab-case', words.join('-')],
+    ['SCREAMING_SNAKE', words.join('_').toUpperCase()],
+    ['dot.case', words.join('.')],
+    ['path/case', words.join('/')],
+    ['Title Case', words.map(caseCap).join(' ')],
+    ['lowercase', words.join(' ')],
+    ['UPPERCASE', words.join(' ').toUpperCase()]
+  ];
+  $('caseGrid').innerHTML = items.map(pair =>
+    '<div class="case-item" data-v="' + esc(pair[1]) + '"><div class="k">' + pair[0] + '</div><div class="v">' + (esc(pair[1]) || '<span style="color:var(--muted)">—</span>') + '</div></div>'
+  ).join('');
+  document.querySelectorAll('.case-item').forEach(el => el.addEventListener('click', () => copyText(el.dataset.v, 'Copied')));
+}
+$('caseInput').addEventListener('input', caseConvert);
+caseConvert();
+
+/* ============================== Gradient builder ============================== */
+const GR_PRESETS = [
+  ['Sunset', '#ff6b6b', '#feca57'], ['Ocean', '#1e90ff', '#00d2ff'],
+  ['Neon', '#22d3ee', '#f472b6'], ['Candy', '#a78bfa', '#f472b6'],
+  ['Forest', '#11998e', '#38ef7d'], ['Ember', '#f12711', '#f5af19']
+];
+function grUpdate(){
+  const a = $('grA').value, b = $('grB').value, ang = $('grAngle').value;
+  $('grAngleVal').textContent = ang + '°';
+  const css = 'linear-gradient(' + ang + 'deg, ' + a + ', ' + b + ')';
+  $('grPreview').style.background = css;
+  $('grCode').textContent = 'background: ' + css + ';';
+}
+['grA', 'grB'].forEach(id => $(id).addEventListener('input', grUpdate));
+$('grAngle').addEventListener('input', grUpdate);
+$('grCopy').addEventListener('click', () => copyText($('grCode').textContent, 'CSS copied'));
+GR_PRESETS.forEach(preset => {
+  const btn = document.createElement('button');
+  btn.className = 'btn small'; btn.textContent = preset[0];
+  btn.addEventListener('click', () => { $('grA').value = preset[1]; $('grB').value = preset[2]; grUpdate(); });
+  $('grPresets').appendChild(btn);
+});
+grUpdate();
+
+/* ============================== Regex replace ============================== */
+function rxReplace(){
+  const pattern = $('rxPattern').value;
+  const flags = Array.from(document.querySelectorAll('#rxFlags input:checked')).map(c => c.value).join('');
+  if(!pattern){ setStatus($('rxReplStatus'), 'Enter a pattern first 🙂', 'info'); return; }
+  let re;
+  try { re = new RegExp(pattern, flags.includes('g') ? flags : flags + 'g'); }
+  catch(e){ setStatus($('rxReplStatus'), '✖ Bad pattern: ' + e.message, 'bad'); return; }
+  const text = $('rxText').value;
+  const matches = text.match(re);
+  const n = matches ? matches.length : 0;
+  re.lastIndex = 0;
+  $('rxReplOut').textContent = text.replace(re, $('rxRepl').value);
+  setStatus($('rxReplStatus'), n ? '✔ ' + n + ' replacement(s)' : 'No matches — nothing replaced', n ? 'ok' : 'info');
+}
+$('rxReplace').addEventListener('click', rxReplace);
+
+/* ============================== Merge sort ============================== */
+async function sMerge(lo, hi){
+  if(lo >= hi) return;
+  const mid = (lo + hi) >> 1;
+  await sMerge(lo, mid); await sMerge(mid + 1, hi);
+  const left = sArr.slice(lo, mid + 1), right = sArr.slice(mid + 1, hi + 1);
+  let i = 0, j = 0, k = lo;
+  while(i < left.length && j < right.length){
+    sCmp++; sBump(); sRender(lo + i, mid + 1 + j, false); await sleep(sDelay());
+    if(left[i] <= right[j]) sArr[k++] = left[i++];
+    else sArr[k++] = right[j++];
+    sSwp++; sBump();
+  }
+  while(i < left.length){ sArr[k++] = left[i++]; sSwp++; }
+  while(j < right.length){ sArr[k++] = right[j++]; sSwp++; }
+  sBump();
+}
+
+/* ============================== Unix time ============================== */
+function unixTick(){
+  const el = $('unixNow');
+  if(el) el.textContent = String(Math.floor(Date.now() / 1000));
+}
+setInterval(unixTick, 1000); unixTick();
+$('unixNowCopy').addEventListener('click', () => copyText($('unixNow').textContent, 'Timestamp copied'));
+function unixRelative(ts){
+  const diff = ts - Math.floor(Date.now() / 1000);
+  const abs = Math.abs(diff);
+  const units = [[31536000, 'year'], [2592000, 'month'], [86400, 'day'], [3600, 'hour'], [60, 'minute'], [1, 'second']];
+  for(const u of units){
+    if(abs >= u[0]){
+      const n = Math.floor(abs / u[0]);
+      const txt = n + ' ' + u[1] + (n === 1 ? '' : 's');
+      return diff >= 0 ? 'in ' + txt : txt + ' ago';
+    }
+  }
+  return 'right now';
+}
+$('unixToDate').addEventListener('click', () => {
+  const raw = $('unixIn').value.trim().replace(/\s+/g, '');
+  const num = Number(raw);
+  if(!raw || isNaN(num)){ setStatus($('unixStatus'), '✖ Enter a numeric timestamp', 'bad'); return; }
+  const ms = Math.abs(num) >= 1e12 ? num : num * 1000;
+  const d = new Date(ms);
+  if(isNaN(d.getTime())){ setStatus($('unixStatus'), '✖ Out of range', 'bad'); return; }
+  $('unixDateOut').textContent = d.toLocaleString() + '\n' + d.toISOString() + '\n' + d.toUTCString() + '\n' + unixRelative(Math.round(ms / 1000));
+  setStatus($('unixStatus'), '✔ Done', 'ok');
+});
+$('unixToTs').addEventListener('click', () => {
+  const raw = $('unixDateIn').value.trim();
+  const ms = Date.parse(raw);
+  if(!raw || isNaN(ms)){ setStatus($('unixStatus'), '✖ Cannot parse — try YYYY-MM-DD HH:MM', 'bad'); return; }
+  $('unixTsOut').textContent = String(Math.floor(ms / 1000)) + '\n' + String(ms) + ' (ms)';
+  setStatus($('unixStatus'), '✔ Done', 'ok');
+});
+
+/* ============================== Text codecs ============================== */
+function rot13(s){
+  return String(s).replace(/[A-Za-z]/g, c => {
+    const b = c <= 'Z' ? 65 : 97;
+    return String.fromCharCode((c.charCodeAt(0) - b + 13) % 26 + b);
+  });
+}
+const RU_MAP = {а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'yo',ж:'zh',з:'z',и:'i',й:'y',к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',х:'h',ц:'ts',ч:'ch',ш:'sh',щ:'sch',ъ:'',ы:'y',ь:'',э:'e',ю:'yu',я:'ya'};
+function slugify(s){
+  s = String(s).toLowerCase().replace(/[а-яё]/g, c => RU_MAP[c]);
+  return s.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+function htmlEscape(s){
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function htmlUnescape(s){
+  const ta = document.createElement('textarea');
+  ta.innerHTML = s;
+  return ta.value;
+}
+document.querySelectorAll('[data-codec]').forEach(b => b.addEventListener('click', () => {
+  const input = $('codecIn').value, mode = b.dataset.codec;
+  try {
+    let out = '';
+    if(mode === 'urlenc') out = encodeURIComponent(input);
+    else if(mode === 'urldec') out = decodeURIComponent(input);
+    else if(mode === 'htmlenc') out = htmlEscape(input);
+    else if(mode === 'htmldec') out = htmlUnescape(input);
+    else if(mode === 'rot13') out = rot13(input);
+    else if(mode === 'slug') out = slugify(input);
+    $('codecOut').textContent = out;
+    setStatus($('codecStatus'), '✔ ' + b.textContent + ' — ' + out.length + ' chars', 'ok');
+  } catch(e){ setStatus($('codecStatus'), '✖ ' + e.message, 'bad'); }
+}));
+$('codecCopy').addEventListener('click', () => copyText($('codecOut').textContent, 'Copied'));
+
+/* ============================== JWT sign ============================== */
+async function jwtSign(){
+  let payload;
+  try { payload = JSON.parse($('jwtNewPayload').value); }
+  catch(e){ $('jwtNewOut').textContent = '✖ Invalid JSON: ' + e.message; return; }
+  const secret = $('jwtNewSecret').value || 'dev-secret';
+  try {
+    const header = b64urlEncode(te.encode(JSON.stringify({alg: 'HS256', typ: 'JWT'})));
+    const body = b64urlEncode(te.encode(JSON.stringify(payload)));
+    const key = await crypto.subtle.importKey('raw', te.encode(secret), {name: 'HMAC', hash: 'SHA-256'}, false, ['sign']);
+    const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, te.encode(header + '.' + body)));
+    $('jwtNewOut').textContent = header + '.' + body + '.' + b64urlEncode(sig);
+    toast('Token signed ✍️');
+  } catch(e){ $('jwtNewOut').textContent = '✖ ' + e.message; }
+}
+$('jwtSign').addEventListener('click', jwtSign);
+$('jwtNewCopy').addEventListener('click', () => copyText($('jwtNewOut').textContent, 'Token copied'));
+$('jwtUseNew').addEventListener('click', () => {
+  $('jwtToken').value = $('jwtNewOut').textContent;
+  $('jwtSecret').value = $('jwtNewSecret').value;
+  jwtDecode();
+  toast('Loaded into decoder ⬆');
+});
+
+/* ============================== Sort race ============================== */
+async function sRace(){
+  if(sRunning) return;
+  const out = $('raceOut');
+  sSetRunning(true);
+  out.innerHTML = '<div style="color:var(--muted)">🏁 Racing on ' + sArr.length + ' bars…</div>';
+  const base = [...sArr];
+  const algos = [
+    ['Bubble', sBubble], ['Selection', sSelection], ['Insertion', sInsertion],
+    ['Merge', () => sMerge(0, sArr.length - 1)], ['Quick', () => sQuick(0, sArr.length - 1)]
+  ];
+  const results = [];
+  sTurbo = true;
+  for(const pair of algos){
+    sArr = [...base]; sCmp = 0; sSwp = 0;
+    const t0 = performance.now();
+    await pair[1]();
+    results.push({name: pair[0], ms: performance.now() - t0, cmp: sCmp, swp: sSwp});
+  }
+  sTurbo = false;
+  sArr = [...base];
+  sRender(-1, -1, false);
+  sCmp = 0; sSwp = 0; sBump();
+  results.sort((a, b) => a.ms - b.ms);
+  const medals = ['🥇', '🥈', '🥉', '4th', '5th'];
+  const peak = Math.max.apply(null, results.map(r => r.ms).concat([0.001]));
+  out.innerHTML = '<table class="kv race-table">' + results.map((r, i) =>
+    '<tr><td>' + medals[i] + ' <b>' + r.name + '</b></td><td>' + r.ms.toFixed(1) + ' ms · ' +
+    r.cmp + ' cmp · ' + r.swp + ' swaps <div class="meter" style="margin-top:4px"><div style="width:' +
+    Math.max(2, Math.round(r.ms / peak * 100)) + '%"></div></div></td></tr>'
+  ).join('') + '</table>';
+  sSetRunning(false);
+}
+$('sortRace').addEventListener('click', sRace);
+
+/* ============================== Theme ============================== */
+function themeApply(name){
+  document.documentElement.setAttribute('data-theme', name);
+  $('themeToggle').textContent = name === 'light' ? '☀️' : '🌙';
+  try { localStorage.setItem('vibe-theme', name); } catch(e){}
+}
+$('themeToggle').addEventListener('click', () => {
+  const cur = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  themeApply(cur);
+});
+(function(){
+  let t = 'dark';
+  try { t = localStorage.getItem('vibe-theme') || 'dark'; } catch(e){}
+  themeApply(t);
+})();
+
+/* ============================== Pomodoro notifications ============================== */
+function pomoAskNotify(){
+  try {
+    if('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+  } catch(e){}
+}
+function pomoNotify(msg){
+  try {
+    if('Notification' in window && Notification.permission === 'granted' && document.hidden) new Notification('VibeCode ⏰', {body: msg});
+  } catch(e){}
+}
+
+/* ============================== text diff ============================== */
+function diffLines(a, b){
+  const A = String(a).split('\n'), B = String(b).split('\n');
+  const n = A.length, m = B.length;
+  if(n * m > 100000) return [{t: '!', s: 'Too big to diff — please trim the inputs.'}];
+  const W = m + 1;
+  const dp = new Uint32Array((n + 1) * W);
+  for(let i = n - 1; i >= 0; i--)
+    for(let j = m - 1; j >= 0; j--)
+      dp[i * W + j] = A[i] === B[j] ? dp[(i + 1) * W + j + 1] + 1
+        : Math.max(dp[(i + 1) * W + j], dp[i * W + j + 1]);
+  const ops = [];
+  let i = 0, j = 0;
+  while(i < n && j < m){
+    if(A[i] === B[j]){ ops.push({t: ' ', s: A[i]}); i++; j++; }
+    else if(dp[(i + 1) * W + j] >= dp[i * W + j + 1]){ ops.push({t: '-', s: A[i]}); i++; }
+    else { ops.push({t: '+', s: B[j]}); j++; }
+  }
+  while(i < n){ ops.push({t: '-', s: A[i]}); i++; }
+  while(j < m){ ops.push({t: '+', s: B[j]}); j++; }
+  return ops;
+}
+const DF_SAMPLE_OLD = 'VibeCode v1.2\n15 tools\nCLI + web\nship it';
+const DF_SAMPLE_NEW = 'VibeCode v1.3\n17 tools\nCLI + web\nshare it\nship it';
+function dfRender(){
+  const oldV = $('dfOld').value, newV = $('dfNew').value;
+  if(!oldV && !newV){
+    $('dfOut').innerHTML = '<div class="dim">Type in both boxes to compare…</div>';
+    setStatus($('dfStatus'), 'Paste two texts to compare', 'info');
+    return;
+  }
+  const ops = diffLines(oldV, newV);
+  let add = 0, del = 0;
+  $('dfOut').innerHTML = ops.map(o => {
+    if(o.t === '+') add++;
+    if(o.t === '-') del++;
+    const cls = o.t === ' ' ? 'df-same' : o.t === '+' ? 'df-add' : o.t === '-' ? 'df-del' : 'dim';
+    return '<div class="' + cls + '">' + esc(o.t + ' ' + o.s) + '</div>';
+  }).join('');
+  setStatus($('dfStatus'), add + del === 0 ? 'Texts are identical ✅' : '+' + add + ' / -' + del + ' lines',
+    add + del === 0 ? 'ok' : 'info');
+}
+$('dfOld').addEventListener('input', dfRender);
+$('dfNew').addEventListener('input', dfRender);
+$('dfSwap').addEventListener('click', () => {
+  const a = $('dfOld');
+  const tmp = a.value; a.value = $('dfNew').value; $('dfNew').value = tmp;
+  dfRender();
+});
+$('dfSample').addEventListener('click', () => { $('dfOld').value = DF_SAMPLE_OLD; $('dfNew').value = DF_SAMPLE_NEW; dfRender(); });
+$('dfClear').addEventListener('click', () => { $('dfOld').value = ''; $('dfNew').value = ''; dfRender(); });
+
+/* ============================== hash & uuid ============================== */
+async function shaHex(algo, text){
+  const buf = await crypto.subtle.digest(algo, new TextEncoder().encode(text));
+  return [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+function uuid4(){
+  if(typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  const b = new Uint8Array(16);
+  crypto.getRandomValues(b);
+  b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
+  const h = [...b].map(x => x.toString(16).padStart(2, '0')).join('');
+  return h.slice(0, 8) + '-' + h.slice(8, 12) + '-' + h.slice(12, 16) + '-' + h.slice(16, 20) + '-' + h.slice(20);
+}
+let hxToken = 0;
+async function hxRender(){
+  const text = $('hxIn').value;
+  const box = $('hxOut');
+  if(!text){
+    box.innerHTML = '<div class="dim">Type something to hash…</div>';
+    setStatus($('hxStatus'), 'SHA digests appear here', 'info');
+    return;
+  }
+  const my = ++hxToken;
+  try {
+    const rows = [];
+    for(const algo of ['SHA-1', 'SHA-256', 'SHA-384', 'SHA-512']){
+      rows.push([algo, await shaHex(algo, text)]);
+      if(my !== hxToken) return;
+    }
+    box.innerHTML = '<table class="kv race-table">' + rows.map(r =>
+      '<tr><td><b>' + r[0] + '</b></td><td class="mono">' + r[1] +
+      ' <button class="btn small" data-hash="' + r[1] + '">📋</button></td></tr>').join('') + '</table>';
+    box.querySelectorAll('[data-hash]').forEach(btn =>
+      btn.addEventListener('click', () => copyText(btn.getAttribute('data-hash'), 'Hash copied')));
+    setStatus($('hxStatus'), text.length + ' chars hashed 🔒', 'ok');
+  } catch(e){ setStatus($('hxStatus'), 'Hashing failed: ' + e.message, 'bad'); }
+}
+$('hxIn').addEventListener('input', hxRender);
+$('hxUuidBtn').addEventListener('click', () => { $('hxUuidOut').value = uuid4(); });
+$('hxUuidCopy').addEventListener('click', () => {
+  const v = $('hxUuidOut').value;
+  if(v) copyText(v, 'UUID'); else toast('Generate a UUID first 🎲');
+});
+
+/* ============================== share via URL ============================== */
+function shareB64e(s){
+  return btoa(unescape(encodeURIComponent(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function shareB64d(s){
+  s = String(s).replace(/-/g, '+').replace(/_/g, '/');
+  while(s.length % 4) s += '=';
+  return decodeURIComponent(escape(atob(s)));
+}
+function shareEncode(tab, vals, theme){
+  return '#s=' + shareB64e(JSON.stringify({t: tab || 'home', v: vals || {}, th: theme || 'dark'}));
+}
+function shareDecode(hash){
+  try {
+    const m = /^#s=(.+)$/.exec(String(hash || ''));
+    if(!m) return null;
+    const o = JSON.parse(shareB64d(m[1]));
+    if(!o || typeof o !== 'object' || Array.isArray(o)) return null;
+    return {tab: typeof o.t === 'string' ? o.t : 'home',
+            vals: (o.v && typeof o.v === 'object') ? o.v : {},
+            theme: o.th === 'light' ? 'light' : 'dark'};
+  } catch(e){ return null; }
+}
+function shareCollect(){
+  const vals = {};
+  document.querySelectorAll('input[id], textarea[id], select[id]').forEach(el => {
+    if(!el.id || /secret/i.test(el.id) || el.type === 'file') return;
+    if(el.type === 'checkbox') vals[el.id] = el.checked ? '1' : '0';
+    else if(el.type === 'radio'){ if(el.checked) vals[el.id] = el.value; }
+    else if('value' in el) vals[el.id] = String(el.value);
+  });
+  let tab = 'home';
+  const active = document.querySelector('.tab-btn.active');
+  if(active && active.dataset && active.dataset.tab) tab = active.dataset.tab;
+  let theme = 'dark';
+  try { theme = document.documentElement.getAttribute('data-theme') || 'dark'; } catch(e){}
+  return {tab: tab, vals: vals, theme: theme};
+}
+function shareApply(data){
+  if(!data) return false;
+  try {
+    Object.keys(data.vals).forEach(id => {
+      const el = $(id);
+      if(!el) return;
+      if(el.type === 'checkbox') el.checked = data.vals[id] === '1';
+      else if(!('value' in el)) return;
+      else {
+        el.value = data.vals[id];
+        const tag = el.tagName || '';
+        const type = el.type || 'text';
+        if(tag === 'TEXTAREA' || (tag === 'INPUT' && /^(text|number|search)$/.test(type))){
+          try { el.dispatchEvent(new Event('input', {bubbles: true})); } catch(e){}
+        }
+      }
+    });
+    if(typeof themeApply === 'function') themeApply(data.theme || 'dark');
+    if(document.getElementById('tab-' + data.tab)) switchTab(data.tab);
+    return true;
+  } catch(e){ return false; }
+}
+$('shareBtn').addEventListener('click', () => {
+  const s = shareCollect();
+  copyText(String(location.href).split('#')[0] + shareEncode(s.tab, s.vals, s.theme), 'Share link');
+});
+
+/* restore last tab (or shared state) */
+(function(){
+  let h = location.hash || '';
+  if(h.indexOf('#s=') === 0){
+    if(shareApply(shareDecode(h))){ toast('Shared state loaded 🔗'); return; }
+    h = '';
+  }
+  let tab = h.replace('#', '');
+  if(!tab){ try { tab = localStorage.getItem('vibe-tab') || 'home'; } catch(e){ tab = 'home'; } }
+  if(document.getElementById('tab-' + tab)) switchTab(tab);
+})();
+</script>
+</body>
+</html>

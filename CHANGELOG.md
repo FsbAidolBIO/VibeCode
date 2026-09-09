@@ -1,0 +1,57 @@
+# Changelog
+
+All notable changes to VibeCode. Format inspired by [Keep a Changelog](https://keepachangelog.com/).
+
+## [1.3.0] — 2026-09-09
+
+### Added — CLI (`vibecode.py`, now 18 commands)
+- `notes` — terminal snippet manager: add/show/search/edit/rm + tags
+  (stored next to `todo.json`, honors `VIBECODE_HOME`)
+- `banner --font slant` — italic shear of the block font (rainbow-safe)
+
+### Added — playground (`index.html`, now 17 tools)
+- 🔀 Text diff checker (line LCS, live red/green, swap/sample/clear)
+- #️⃣ Hash & UUID generator (SHA-1/256/384/512 via WebCrypto + v4 UUIDs)
+- 🔗 Share button: tab + theme + every tool input encoded in the URL hash
+
+### Tests & docs
+- 55 unit tests + Node harness (diff, share roundtrip, real SHA-256, UUID format)
+
+## [1.2.0] — 2026-09-09
+
+### Added — CLI (`vibecode.py`, now 17 commands)
+- `completions` — tab-completion scripts for bash/zsh/fish (tested in real bash)
+- `banner --font mini` — compact 5×3 pixel font (works with `--rainbow` too)
+
+### Added — playground (`index.html`, now 15 tools)
+- ⏱ Unix time converter (relative time + live clock), 🔤 text codecs
+  (URL, HTML entities, ROT13, slugify with Cyrillic translit)
+- ✍️ JWT test-token signer, 🏁 sorting race mode, 🌙 dark/light theme,
+  pomodoro desktop notifications
+
+### Tests & docs
+- 49 unit tests + Node harness for web logic (race, JWT sign, slugify…)
+- Terminal screenshot (`assets/terminal.svg`) in README
+
+## [1.1.0] — 2026-09-09
+
+### Added — CLI (`vibecode.py`, now 16 commands, still stdlib-only)
+- `todo` — tiny terminal TODO manager (`add`/`list`/`done`/`rm`/`clear`)
+- `git-stats` — authors leaderboard, punchcard heatmap, last-12-weeks bars
+- `lorem`, `uuid`, `hash`, `http` — everyday micro-utilities
+- `vibe-check --fix` (+ `--yes`) — scaffolds README, LICENSE, .gitignore, sample tests
+- `banner --rainbow` — neon gradient ASCII banners 🌈
+
+### Added — playground (`index.html`, now 13 tools, still one offline file)
+- ⏰ Cron parser (human description + next runs), 🔑 JWT decoder + HS256 verifier,
+  📝 Lorem ipsum, Aa case converter
+- Regex find/replace mode, merge-sort visualizer, gradient builder in Colors
+
+### Tests & CI
+- 42 unit tests (was 24), incl. local-HTTP and temp-git-repo integration tests
+- CI smoke-test covers every new command
+
+## [1.0.0] — 2026-09-09
+
+- Initial release: 10-command stdlib CLI + 9-tool single-file playground,
+  24 tests, CI with vibe-check dogfood gate.
