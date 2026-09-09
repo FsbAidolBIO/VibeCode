@@ -2,6 +2,21 @@
 
 All notable changes to VibeCode. Format inspired by [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.3.0] — 2026-09-09
+
+### Added — CLI (`vibecode.py`, now 18 commands)
+- `notes` — terminal snippet manager: add/show/search/edit/rm + tags
+  (stored next to `todo.json`, honors `VIBECODE_HOME`)
+- `banner --font slant` — italic shear of the block font (rainbow-safe)
+
+### Added — playground (`index.html`, now 17 tools)
+- 🔀 Text diff checker (line LCS, live red/green, swap/sample/clear)
+- #️⃣ Hash & UUID generator (SHA-1/256/384/512 via WebCrypto + v4 UUIDs)
+- 🔗 Share button: tab + theme + every tool input encoded in the URL hash
+
+### Tests & docs
+- 55 unit tests + Node harness (diff, share roundtrip, real SHA-256, UUID format)
+
 ## [1.2.0] — 2026-09-09
 
 ### Added — CLI (`vibecode.py`, now 17 commands)

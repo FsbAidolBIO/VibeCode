@@ -152,6 +152,15 @@ mark{background:rgba(251,191,36,.35);color:#ffe9b0;border-radius:3px;padding:0 1
 .race-table td:first-child{width:150px}
 .race-table b{color:var(--text)}
 #themeToggle{margin-left:8px}
+/* v1.3: diff + hash */
+#dfOut{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:10px;max-height:320px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+.df-same{color:var(--muted)}
+.df-add{background:rgba(52,211,153,.12);color:var(--green)}
+.df-del{background:rgba(248,113,113,.12);color:var(--red)}
+.hx-grid{margin-top:10px}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;word-break:break-all}
+#shareBtn{margin-left:8px}
+.dim{color:var(--muted)}
 /* misc */
 .checks{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:14px}
 .checks label{display:flex;gap:6px;align-items:center;cursor:pointer;color:var(--text)}
@@ -174,8 +183,9 @@ footer .spacer{flex:1}
 <header class="topbar">
   <div class="logo">✨ VibeCode</div>
   <div class="tagline">dev toolkit that <b>just works</b> — 1 file, 0 dependencies, 100% offline</div>
-  <div class="pill">⚡ <b>15 tools</b> in one page</div>
+  <div class="pill">⚡ <b>17 tools</b> in one page</div>
   <button class="btn small" id="themeToggle" title="Toggle light/dark theme">🌙</button>
+  <button class="btn small" id="shareBtn" title="Copy share link">🔗</button>
 </header>
 
 <nav class="tabs" id="tabs">
@@ -194,6 +204,8 @@ footer .spacer{flex:1}
   <button class="tab-btn" data-tab="case">Aa Case</button>
   <button class="tab-btn" data-tab="unix">⏱ Unix</button>
   <button class="tab-btn" data-tab="codecs">🔤 Codecs</button>
+  <button class="tab-btn" data-tab="diff">🔀 Diff</button>
+  <button class="tab-btn" data-tab="hash">#️⃣ Hash</button>
 </nav>
 
 <main class="container">
@@ -220,6 +232,8 @@ footer .spacer{flex:1}
       <div class="card feat" data-goto="case"><div class="ico">Aa</div><h3>Case Converter</h3><p>camelCase, snake_case, kebab-case and more — click any to copy.</p></div>
       <div class="card feat" data-goto="unix"><div class="ico">⏱</div><h3>Unix Time</h3><p>Timestamp ↔ date converter with a live ticking clock.</p></div>
       <div class="card feat" data-goto="codecs"><div class="ico">🔤</div><h3>Text Codecs</h3><p>URL, HTML entities, ROT13 and slugify in one place.</p></div>
+<div class="card feat" data-goto="diff"><div class="ico">🔀</div><h3>Text Diff</h3><p>Line-by-line LCS diff with red/green highlighting.</p></div>
+<div class="card feat" data-goto="hash"><div class="ico">#️⃣</div><h3>Hash &amp; UUID</h3><p>SHA-1/256/384/512 via WebCrypto + random UUIDs.</p></div>
 <div class="card feat" data-goto="home" id="featCli"><div class="ico">💻</div><h3>+ Terminal CLI</h3><p>Companion Python CLI: analyze, vibe-check, banner, dashboard…</p></div>
     </div>
     <div class="card">
@@ -611,6 +625,45 @@ footer .spacer{flex:1}
       <pre class="output" id="codecOut">— pick a codec —</pre>
       <div class="btnrow"><button class="btn small" id="codecCopy">📋 Copy</button></div>
       <div class="status info" id="codecStatus"></div>
+    </div>
+  </section>
+  <section class="tab-panel" id="tab-diff">
+    <div class="card">
+      <h2>🔀 Text diff checker</h2>
+      <p class="desc">Line-by-line diff (LCS). Paste the original and the modified text — diff updates live.</p>
+      <div class="grid2">
+        <div>
+          <label class="lbl" for="dfOld">Original</label>
+          <textarea id="dfOld" rows="8" placeholder="old text…" spellcheck="false"></textarea>
+        </div>
+        <div>
+          <label class="lbl" for="dfNew">Modified</label>
+          <textarea id="dfNew" rows="8" placeholder="new text…" spellcheck="false"></textarea>
+        </div>
+      </div>
+      <div class="btnrow">
+        <button class="btn primary" id="dfSwap">⇄ Swap</button>
+        <button class="btn" id="dfSample">🎲 Sample</button>
+        <button class="btn" id="dfClear">🧹 Clear</button>
+      </div>
+      <div class="status info" id="dfStatus"></div>
+      <div id="dfOut"><div class="dim">Type in both boxes to compare…</div></div>
+    </div>
+  </section>
+  <section class="tab-panel" id="tab-hash">
+    <div class="card">
+      <h2>#️⃣ Hash &amp; UUID generator</h2>
+      <p class="desc">SHA digests via WebCrypto (async) + random v4 UUIDs. Everything stays in your browser.</p>
+      <label class="lbl" for="hxIn">Text to hash</label>
+      <textarea id="hxIn" rows="3" placeholder="type something…" spellcheck="false"></textarea>
+      <div class="status info" id="hxStatus"></div>
+      <div id="hxOut" class="hx-grid"><div class="dim">Type something to hash…</div></div>
+      <h3 style="margin-top:14px">🎲 Random UUID (v4)</h3>
+      <div class="btnrow">
+        <button class="btn primary" id="hxUuidBtn">Generate</button>
+        <button class="btn" id="hxUuidCopy">📋 Copy</button>
+      </div>
+      <input type="text" id="hxUuidOut" readonly placeholder="press Generate…" spellcheck="false" style="font-family:ui-monospace,monospace">
     </div>
   </section>
 </main>
@@ -1524,9 +1577,175 @@ function pomoNotify(msg){
   } catch(e){}
 }
 
-/* restore last tab */
+/* ============================== text diff ============================== */
+function diffLines(a, b){
+  const A = String(a).split('\n'), B = String(b).split('\n');
+  const n = A.length, m = B.length;
+  if(n * m > 100000) return [{t: '!', s: 'Too big to diff — please trim the inputs.'}];
+  const W = m + 1;
+  const dp = new Uint32Array((n + 1) * W);
+  for(let i = n - 1; i >= 0; i--)
+    for(let j = m - 1; j >= 0; j--)
+      dp[i * W + j] = A[i] === B[j] ? dp[(i + 1) * W + j + 1] + 1
+        : Math.max(dp[(i + 1) * W + j], dp[i * W + j + 1]);
+  const ops = [];
+  let i = 0, j = 0;
+  while(i < n && j < m){
+    if(A[i] === B[j]){ ops.push({t: ' ', s: A[i]}); i++; j++; }
+    else if(dp[(i + 1) * W + j] >= dp[i * W + j + 1]){ ops.push({t: '-', s: A[i]}); i++; }
+    else { ops.push({t: '+', s: B[j]}); j++; }
+  }
+  while(i < n){ ops.push({t: '-', s: A[i]}); i++; }
+  while(j < m){ ops.push({t: '+', s: B[j]}); j++; }
+  return ops;
+}
+const DF_SAMPLE_OLD = 'VibeCode v1.2\n15 tools\nCLI + web\nship it';
+const DF_SAMPLE_NEW = 'VibeCode v1.3\n17 tools\nCLI + web\nshare it\nship it';
+function dfRender(){
+  const oldV = $('dfOld').value, newV = $('dfNew').value;
+  if(!oldV && !newV){
+    $('dfOut').innerHTML = '<div class="dim">Type in both boxes to compare…</div>';
+    setStatus($('dfStatus'), 'Paste two texts to compare', 'info');
+    return;
+  }
+  const ops = diffLines(oldV, newV);
+  let add = 0, del = 0;
+  $('dfOut').innerHTML = ops.map(o => {
+    if(o.t === '+') add++;
+    if(o.t === '-') del++;
+    const cls = o.t === ' ' ? 'df-same' : o.t === '+' ? 'df-add' : o.t === '-' ? 'df-del' : 'dim';
+    return '<div class="' + cls + '">' + esc(o.t + ' ' + o.s) + '</div>';
+  }).join('');
+  setStatus($('dfStatus'), add + del === 0 ? 'Texts are identical ✅' : '+' + add + ' / -' + del + ' lines',
+    add + del === 0 ? 'ok' : 'info');
+}
+$('dfOld').addEventListener('input', dfRender);
+$('dfNew').addEventListener('input', dfRender);
+$('dfSwap').addEventListener('click', () => {
+  const a = $('dfOld');
+  const tmp = a.value; a.value = $('dfNew').value; $('dfNew').value = tmp;
+  dfRender();
+});
+$('dfSample').addEventListener('click', () => { $('dfOld').value = DF_SAMPLE_OLD; $('dfNew').value = DF_SAMPLE_NEW; dfRender(); });
+$('dfClear').addEventListener('click', () => { $('dfOld').value = ''; $('dfNew').value = ''; dfRender(); });
+
+/* ============================== hash & uuid ============================== */
+async function shaHex(algo, text){
+  const buf = await crypto.subtle.digest(algo, new TextEncoder().encode(text));
+  return [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+function uuid4(){
+  if(typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  const b = new Uint8Array(16);
+  crypto.getRandomValues(b);
+  b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
+  const h = [...b].map(x => x.toString(16).padStart(2, '0')).join('');
+  return h.slice(0, 8) + '-' + h.slice(8, 12) + '-' + h.slice(12, 16) + '-' + h.slice(16, 20) + '-' + h.slice(20);
+}
+let hxToken = 0;
+async function hxRender(){
+  const text = $('hxIn').value;
+  const box = $('hxOut');
+  if(!text){
+    box.innerHTML = '<div class="dim">Type something to hash…</div>';
+    setStatus($('hxStatus'), 'SHA digests appear here', 'info');
+    return;
+  }
+  const my = ++hxToken;
+  try {
+    const rows = [];
+    for(const algo of ['SHA-1', 'SHA-256', 'SHA-384', 'SHA-512']){
+      rows.push([algo, await shaHex(algo, text)]);
+      if(my !== hxToken) return;
+    }
+    box.innerHTML = '<table class="kv race-table">' + rows.map(r =>
+      '<tr><td><b>' + r[0] + '</b></td><td class="mono">' + r[1] +
+      ' <button class="btn small" data-hash="' + r[1] + '">📋</button></td></tr>').join('') + '</table>';
+    box.querySelectorAll('[data-hash]').forEach(btn =>
+      btn.addEventListener('click', () => copyText(btn.getAttribute('data-hash'), 'Hash copied')));
+    setStatus($('hxStatus'), text.length + ' chars hashed 🔒', 'ok');
+  } catch(e){ setStatus($('hxStatus'), 'Hashing failed: ' + e.message, 'bad'); }
+}
+$('hxIn').addEventListener('input', hxRender);
+$('hxUuidBtn').addEventListener('click', () => { $('hxUuidOut').value = uuid4(); });
+$('hxUuidCopy').addEventListener('click', () => {
+  const v = $('hxUuidOut').value;
+  if(v) copyText(v, 'UUID'); else toast('Generate a UUID first 🎲');
+});
+
+/* ============================== share via URL ============================== */
+function shareB64e(s){
+  return btoa(unescape(encodeURIComponent(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function shareB64d(s){
+  s = String(s).replace(/-/g, '+').replace(/_/g, '/');
+  while(s.length % 4) s += '=';
+  return decodeURIComponent(escape(atob(s)));
+}
+function shareEncode(tab, vals, theme){
+  return '#s=' + shareB64e(JSON.stringify({t: tab || 'home', v: vals || {}, th: theme || 'dark'}));
+}
+function shareDecode(hash){
+  try {
+    const m = /^#s=(.+)$/.exec(String(hash || ''));
+    if(!m) return null;
+    const o = JSON.parse(shareB64d(m[1]));
+    if(!o || typeof o !== 'object' || Array.isArray(o)) return null;
+    return {tab: typeof o.t === 'string' ? o.t : 'home',
+            vals: (o.v && typeof o.v === 'object') ? o.v : {},
+            theme: o.th === 'light' ? 'light' : 'dark'};
+  } catch(e){ return null; }
+}
+function shareCollect(){
+  const vals = {};
+  document.querySelectorAll('input[id], textarea[id], select[id]').forEach(el => {
+    if(!el.id || /secret/i.test(el.id) || el.type === 'file') return;
+    if(el.type === 'checkbox') vals[el.id] = el.checked ? '1' : '0';
+    else if(el.type === 'radio'){ if(el.checked) vals[el.id] = el.value; }
+    else if('value' in el) vals[el.id] = String(el.value);
+  });
+  let tab = 'home';
+  const active = document.querySelector('.tab-btn.active');
+  if(active && active.dataset && active.dataset.tab) tab = active.dataset.tab;
+  let theme = 'dark';
+  try { theme = document.documentElement.getAttribute('data-theme') || 'dark'; } catch(e){}
+  return {tab: tab, vals: vals, theme: theme};
+}
+function shareApply(data){
+  if(!data) return false;
+  try {
+    Object.keys(data.vals).forEach(id => {
+      const el = $(id);
+      if(!el) return;
+      if(el.type === 'checkbox') el.checked = data.vals[id] === '1';
+      else if(!('value' in el)) return;
+      else {
+        el.value = data.vals[id];
+        const tag = el.tagName || '';
+        const type = el.type || 'text';
+        if(tag === 'TEXTAREA' || (tag === 'INPUT' && /^(text|number|search)$/.test(type))){
+          try { el.dispatchEvent(new Event('input', {bubbles: true})); } catch(e){}
+        }
+      }
+    });
+    if(typeof themeApply === 'function') themeApply(data.theme || 'dark');
+    if(document.getElementById('tab-' + data.tab)) switchTab(data.tab);
+    return true;
+  } catch(e){ return false; }
+}
+$('shareBtn').addEventListener('click', () => {
+  const s = shareCollect();
+  copyText(String(location.href).split('#')[0] + shareEncode(s.tab, s.vals, s.theme), 'Share link');
+});
+
+/* restore last tab (or shared state) */
 (function(){
-  let tab = (location.hash || '').replace('#', '');
+  let h = location.hash || '';
+  if(h.indexOf('#s=') === 0){
+    if(shareApply(shareDecode(h))){ toast('Shared state loaded 🔗'); return; }
+    h = '';
+  }
+  let tab = h.replace('#', '');
   if(!tab){ try { tab = localStorage.getItem('vibe-tab') || 'home'; } catch(e){ tab = 'home'; } }
   if(document.getElementById('tab-' + tab)) switchTab(tab);
 })();

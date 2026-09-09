@@ -19,6 +19,7 @@ A single-file CLI with genuinely useful commands:
   hash        md5/sha1/sha256/sha512 of text, file or stdin
   http        fetch a URL: status, timing, headers, body preview
   completions print shell completion script (bash/zsh/fish)
+  notes       terminal snippet manager (add/show/search/tags)
 
 Stdlib only. No pip install needed. Just run it.
 """
@@ -48,7 +49,7 @@ import webbrowser
 from collections import Counter
 from pathlib import Path
 
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 
 
 # ---------------------------------------------------------------- colors
@@ -534,8 +535,14 @@ FONT: dict[str, list[str]] = {
 }
 
 
+def slant_shift(rows: list[str]) -> list[str]:
+    """Shear banner rows right for an italic look (offsets 2,2,1,1,0)."""
+    n = len(rows)
+    return [" " * ((n - i) // 2) + r for i, r in enumerate(rows)]
+
+
 def render_banner(text: str, fill: str = "#", sep: str | None = None, font: str = "block") -> str:
-    """Render *text* with a built-in pixel font (block 5x5 or mini 5x3)."""
+    """Render *text* with a built-in pixel font (block 5x5, mini 5x3 or slant)."""
     fontdict, default_sep = FONTS.get(font, FONTS["block"])
     sep = default_sep if sep is None else sep
     fill = (fill or "#")[0]
@@ -544,6 +551,8 @@ def render_banner(text: str, fill: str = "#", sep: str | None = None, font: str 
         glyph = fontdict.get(ch, fontdict["?"])
         for i in range(5):
             rows[i] += glyph[i].replace("#", fill) + sep
+    if font == "slant":
+        rows = slant_shift(rows)
     return "\n".join(r.rstrip() for r in rows)
 
 
@@ -1040,6 +1049,158 @@ def cmd_todo(args: argparse.Namespace) -> int:
     return 2
 
 
+# ------------------------------------------------------------- notes
+
+NOTES_FILENAME = "notes.json"
+
+
+def notes_path() -> Path:
+    base = os.environ.get("VIBECODE_HOME")
+    root = Path(base) if base else Path.home() / ".vibecode"
+    return root / NOTES_FILENAME
+
+
+def load_notes(path: Path | None = None) -> list[dict]:
+    path = path or notes_path()
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, list) else []
+    except (OSError, json.JSONDecodeError):
+        return []
+
+
+def save_notes(items: list[dict], path: Path | None = None) -> Path:
+    path = path or notes_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(items, indent=2, ensure_ascii=False), encoding="utf-8")
+    return path
+
+
+def parse_tags(raw: str | None) -> list[str]:
+    if not raw:
+        return []
+    return sorted({t.strip().lower() for t in raw.split(",") if t.strip()})
+
+
+def note_add(items: list[dict], title: str, body: str = "",
+             tags: list[str] | None = None) -> dict:
+    nid = max([i.get("id", 0) for i in items] + [0]) + 1
+    entry = {"id": nid, "title": title, "body": body, "tags": tags or [],
+             "created": datetime.datetime.now().isoformat(timespec="seconds")}
+    items.append(entry)
+    return entry
+
+
+def note_get(items: list[dict], nid: int) -> dict | None:
+    for it in items:
+        if it.get("id") == nid:
+            return it
+    return None
+
+
+def note_update(items: list[dict], nid: int, title: str | None = None,
+                body: str | None = None, tags: list[str] | None = None) -> bool:
+    it = note_get(items, nid)
+    if it is None:
+        return False
+    if title is not None:
+        it["title"] = title
+    if body is not None:
+        it["body"] = body
+    if tags is not None:
+        it["tags"] = tags
+    return True
+
+
+def note_remove(items: list[dict], nid: int) -> bool:
+    for n, it in enumerate(items):
+        if it.get("id") == nid:
+            del items[n]
+            return True
+    return False
+
+
+def note_search(items: list[dict], query: str) -> list[dict]:
+    q = query.lower()
+    return [i for i in items
+            if q in i.get("title", "").lower()
+            or q in i.get("body", "").lower()
+            or any(q in t.lower() for t in i.get("tags", []))]
+
+
+def print_notes(items: list[dict], tag: str | None = None) -> None:
+    visible = [i for i in items
+               if tag is None or tag.lower() in [t.lower() for t in i.get("tags", [])]]
+    if not visible:
+        print(dim("  No notes yet. Write one down \U0001f4dd"))
+        return
+    print(head("\n  \U0001f4dd  Notes\n"))
+    for it in visible:
+        tags = " ".join(f"#{t}" for t in it.get("tags", []))
+        line = f"   {ok('#' + str(it.get('id')))}  {it.get('title', '')}"
+        if tags:
+            line += "  " + dim(tags)
+        print(line)
+    print(dim(f"\n   {len(visible)} note(s) \u2022 stored in {notes_path()}\n"))
+
+
+def print_note(it: dict) -> None:
+    tags = " ".join(f"#{t}" for t in it.get("tags", []))
+    print(head(f"\n  \U0001f4dd  #{it.get('id')}  {it.get('title', '')}\n"))
+    if tags:
+        print(dim(f"   {tags}\n"))
+    if it.get("body"):
+        print(f"   {it['body']}\n")
+    print(dim(f"   created {it.get('created', '?')}\n"))
+
+
+def cmd_notes(args: argparse.Namespace) -> int:
+    action = args.notes_cmd or "list"
+    items = load_notes()
+    if action == "add":
+        title = " ".join(args.title).strip()
+        if not title:
+            print(err("\u2716 Title is empty"), file=sys.stderr)
+            return 2
+        entry = note_add(items, title, body=args.body or "", tags=parse_tags(args.tags))
+        save_notes(items)
+        print(ok(f"\u2714 Saved #{entry['id']}: {title}"))
+        return 0
+    if action == "list":
+        print_notes(items, tag=getattr(args, "tag", None))
+        return 0
+    if action == "show":
+        it = note_get(items, args.id)
+        if it is None:
+            print(err(f"\u2716 No note #{args.id}"), file=sys.stderr)
+            return 2
+        print_note(it)
+        return 0
+    if action == "search":
+        found = note_search(items, " ".join(args.query))
+        print_notes(found)
+        return 0
+    if action == "edit":
+        if note_get(items, args.id) is None:
+            print(err(f"\u2716 No note #{args.id}"), file=sys.stderr)
+            return 2
+        note_update(items, args.id,
+                    title=" ".join(args.title) if args.title else None,
+                    body=args.body,
+                    tags=parse_tags(args.tags) if args.tags is not None else None)
+        save_notes(items)
+        print(ok(f"\u2714 Updated note #{args.id}"))
+        return 0
+    if action == "rm":
+        if not note_remove(items, args.id):
+            print(err(f"\u2716 No note #{args.id}"), file=sys.stderr)
+            return 2
+        save_notes(items)
+        print(ok(f"\u2714 Removed note #{args.id}"))
+        return 0
+    return 2
+
+
 # ---------------------------------------------------------- git-stats
 
 DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
@@ -1463,6 +1624,8 @@ def render_rainbow(text: str, fill: str = "#", font: str = "block") -> str:
         glyph = fontdict.get(ch, fontdict["?"])
         for i in range(5):
             rows[i] += glyph[i].replace("#", fill) + _sep
+    if font == "slant":
+        rows = slant_shift(rows)
     out = []
     for row in rows:
         line = ""
@@ -1528,7 +1691,7 @@ FONT_MINI: dict[str, list[str]] = {
     "#": ["# #", "###", "# #", "###", "# #"],
 }
 
-FONTS = {"block": (FONT, "  "), "mini": (FONT_MINI, " ")}
+FONTS = {"block": (FONT, "  "), "mini": (FONT_MINI, " "), "slant": (FONT, "  ")}
 
 
 # ------------------------------------------------------- completions
@@ -1551,6 +1714,7 @@ COMPLETION_COMMANDS = [
     ("hash", "checksums"),
     ("http", "fetch a URL"),
     ("completions", "shell completions"),
+    ("notes", "snippet manager"),
 ]
 
 COMPLETION_FLAGS: dict[str, list[str]] = {
@@ -1571,6 +1735,7 @@ COMPLETION_FLAGS: dict[str, list[str]] = {
     "hash": ["--algo", "--all", "--file"],
     "http": ["--method", "--timeout", "--headers", "--body", "--no-body"],
     "completions": ["bash", "zsh", "fish"],
+    "notes": ["add", "list", "show", "search", "edit", "rm"],
 }
 
 
@@ -1667,6 +1832,7 @@ def build_parser() -> argparse.ArgumentParser:
                "  vibecode git-stats .           authors + punchcard\n"
                "  vibecode http example.com      fetch a URL\n"
                "  vibecode vibe-check . --fix    scaffold missing files\n"
+               "  vibecode notes add 'idea'     snippet manager\n"
                "  eval \"$(vibecode completions bash)\"  tab-completion\n",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -1692,7 +1858,7 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("text", help="text to render (A-Z, 0-9, few symbols)")
     b.add_argument("--char", default="#", help="fill character (default: #)")
     b.add_argument("--rainbow", action="store_true", help="neon gradient colors")
-    b.add_argument("--font", choices=["block", "mini"], default="block", help="pixel font (default: block)")
+    b.add_argument("--font", choices=["block", "mini", "slant"], default="block", help="pixel font (default: block)")
     b.set_defaults(func=cmd_banner)
 
     s = sub.add_parser("stats", help="show system info")
@@ -1755,6 +1921,26 @@ def build_parser() -> argparse.ArgumentParser:
     tc.add_argument("--all", action="store_true", help="remove everything")
     t.set_defaults(func=cmd_todo)
 
+    n = sub.add_parser("notes", help="terminal snippet manager")
+    ns = n.add_subparsers(dest="notes_cmd", metavar="<action>")
+    nl = ns.add_parser("list", help="list notes")
+    nl.add_argument("--tag", help="filter by tag")
+    na = ns.add_parser("add", help="add a note")
+    na.add_argument("title", nargs="+", help="note title")
+    na.add_argument("--body", default="", help="note body")
+    na.add_argument("--tags", help="comma-separated tags")
+    nw = ns.add_parser("show", help="show a note")
+    nw.add_argument("id", type=int)
+    nq = ns.add_parser("search", help="search notes")
+    nq.add_argument("query", nargs="+", help="search text")
+    ne = ns.add_parser("edit", help="edit a note")
+    ne.add_argument("id", type=int)
+    ne.add_argument("--title", nargs="+", help="new title")
+    ne.add_argument("--body", help="new body")
+    ne.add_argument("--tags", help="new comma-separated tags")
+    nr = ns.add_parser("rm", help="remove a note")
+    nr.add_argument("id", type=int)
+    n.set_defaults(func=cmd_notes)
     gs = sub.add_parser("git-stats", help="authors, punchcard, weekly activity")
     gs.add_argument("path", nargs="?", default=".", help="repo directory (default: .)")
     gs.add_argument("--authors", type=int, default=8, help="top N authors (default: 8)")

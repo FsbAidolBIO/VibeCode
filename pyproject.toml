@@ -1,6 +1,6 @@
 [project]
 name = "vibecode"
-version = "1.2.0"
+version = "1.3.0"
 description = "Zero-dependency developer toolkit: terminal CLI + single-file web playground"
 readme = "README.md"
 requires-python = ">=3.9"

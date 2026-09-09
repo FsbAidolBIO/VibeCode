@@ -38,16 +38,25 @@ from vibecode import (
     hash_bytes,
     hash_file,
     header_get,
+    load_notes,
     load_todo,
     lorem_paragraphs,
     lorem_sentences,
     lorem_words,
     make_uuid,
+    note_add,
+    note_get,
+    note_remove,
+    note_search,
+    note_update,
     parse_shortlog,
+    parse_tags,
     punchcard_grid,
     render_punchcard,
     render_rainbow,
+    save_notes,
     save_todo,
+    slant_shift,
     strip_ansi,
     todo_add,
     todo_clear_done,
@@ -243,7 +252,8 @@ class TestWebPlayground(unittest.TestCase):
         content = index.read_text(encoding="utf-8").lower()
         for marker in ["vibecode", "json", "regex", "base64", "password", "pomodoro", "sort",
                     "markdown", "cron", "jwt", "lorem", "camelcase",
-                    "unix timestamp", "text codecs", "rot13", "race-table", "test token"]:
+                    "unix timestamp", "text codecs", "rot13", "race-table", "test token",
+                    "text diff checker", "hash &amp; uuid", "share link"]:
             self.assertIn(marker, content, f"index.html should contain {marker!r}")
 
 
@@ -455,6 +465,63 @@ class TestRainbow(unittest.TestCase):
         with mock.patch.dict(os.environ, {"NO_COLOR": "1"}):
             self.assertNotIn("\033[", render_rainbow("HI"))
 
+
+class TestNotes(unittest.TestCase):
+    def test_crud_roundtrip(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "notes.json"
+            self.assertEqual(load_notes(p), [])
+            items = []
+            e1 = note_add(items, "first", body="hello world", tags=["a", "b"])
+            e2 = note_add(items, "second")
+            self.assertEqual((e1["id"], e2["id"]), (1, 2))
+            save_notes(items, p)
+            back = load_notes(p)
+            self.assertEqual([i["title"] for i in back], ["first", "second"])
+            self.assertTrue(note_update(back, 1, title="renamed", tags=["c"]))
+            self.assertEqual(note_get(back, 1)["tags"], ["c"])
+            self.assertFalse(note_update(back, 99, title="x"))
+            self.assertIsNone(note_get(back, 99))
+            self.assertTrue(note_remove(back, 2))
+            self.assertFalse(note_remove(back, 2))
+
+    def test_search_and_tags(self):
+        items = []
+        note_add(items, "Shopping", body="buy milk", tags=["home"])
+        note_add(items, "Deploy", body="ship v1.3.0", tags=["work", "rel"])
+        self.assertEqual([i["id"] for i in note_search(items, "milk")], [1])
+        self.assertEqual([i["id"] for i in note_search(items, "SHIP")], [2])
+        self.assertEqual([i["id"] for i in note_search(items, "rel")], [2])
+        self.assertEqual(note_search(items, "nope"), [])
+        self.assertEqual(parse_tags("B, a,,B "), ["a", "b"])
+        self.assertEqual(parse_tags(None), [])
+        self.assertEqual(parse_tags(""), [])
+
+    def test_corrupt_file_returns_empty(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "notes.json"
+            p.write_text("{oops", encoding="utf-8")
+            self.assertEqual(load_notes(p), [])
+
+
+class TestSlant(unittest.TestCase):
+    def test_slant_offsets(self):
+        self.assertEqual(slant_shift(["a", "b", "c", "d", "e"]),
+                         ["  a", "  b", " c", " d", "e"])
+
+    def test_slant_preserves_block_content(self):
+        offs = (2, 2, 1, 1, 0)
+        block = render_banner("AZ09", font="block").splitlines()
+        slant = render_banner("AZ09", font="slant").splitlines()
+        self.assertEqual(len(slant), 5)
+        for i in range(5):
+            self.assertTrue(slant[i].startswith(" " * offs[i]))
+            self.assertEqual(slant[i][offs[i]:], block[i])
+
+    def test_slant_rainbow_roundtrip(self):
+        out = render_rainbow("GO", font="slant")
+        self.assertIn("\033[", out)
+        self.assertEqual(len(strip_ansi(out).splitlines()), 5)
 
 class TestMiniFont(unittest.TestCase):
     def test_mini_glyphs_are_5x3(self):
