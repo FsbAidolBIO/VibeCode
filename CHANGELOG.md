@@ -2,6 +2,22 @@
 
 All notable changes to VibeCode. Format inspired by [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.2.0] — 2026-09-09
+
+### Added — CLI (`vibecode.py`, now 17 commands)
+- `completions` — tab-completion scripts for bash/zsh/fish (tested in real bash)
+- `banner --font mini` — compact 5×3 pixel font (works with `--rainbow` too)
+
+### Added — playground (`index.html`, now 15 tools)
+- ⏱ Unix time converter (relative time + live clock), 🔤 text codecs
+  (URL, HTML entities, ROT13, slugify with Cyrillic translit)
+- ✍️ JWT test-token signer, 🏁 sorting race mode, 🌙 dark/light theme,
+  pomodoro desktop notifications
+
+### Tests & docs
+- 49 unit tests + Node harness for web logic (race, JWT sign, slugify…)
+- Terminal screenshot (`assets/terminal.svg`) in README
+
 ## [1.1.0] — 2026-09-09
 
 ### Added — CLI (`vibecode.py`, now 16 commands, still stdlib-only)

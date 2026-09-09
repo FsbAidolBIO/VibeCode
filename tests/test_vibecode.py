@@ -30,6 +30,10 @@ from vibecode import (
     tier_for_score,
     vibe_checks,
     FONT,
+    FONT_MINI,
+    completions_bash,
+    completions_fish,
+    completions_zsh,
     fetch_url,
     hash_bytes,
     hash_file,
@@ -238,7 +242,8 @@ class TestWebPlayground(unittest.TestCase):
         self.assertTrue(index.exists(), "index.html web playground must exist")
         content = index.read_text(encoding="utf-8").lower()
         for marker in ["vibecode", "json", "regex", "base64", "password", "pomodoro", "sort",
-                    "markdown", "cron", "jwt", "lorem", "camelcase"]:
+                    "markdown", "cron", "jwt", "lorem", "camelcase",
+                    "unix timestamp", "text codecs", "rot13", "race-table", "test token"]:
             self.assertIn(marker, content, f"index.html should contain {marker!r}")
 
 
@@ -449,6 +454,50 @@ class TestRainbow(unittest.TestCase):
     def test_no_color_respected(self):
         with mock.patch.dict(os.environ, {"NO_COLOR": "1"}):
             self.assertNotIn("\033[", render_rainbow("HI"))
+
+
+class TestMiniFont(unittest.TestCase):
+    def test_mini_glyphs_are_5x3(self):
+        for ch, glyph in FONT_MINI.items():
+            self.assertEqual(len(glyph), 5, f"mini glyph {ch!r} must have 5 rows")
+            for row in glyph:
+                self.assertEqual(len(row), 3, f"mini glyph {ch!r} row {row!r} must be 3 wide")
+
+    def test_mini_covers_block_charset(self):
+        for ch in FONT:
+            self.assertIn(ch, FONT_MINI, f"mini font missing {ch!r}")
+
+    def test_render_mini_shape(self):
+        out = render_banner("HI", font="mini")
+        self.assertEqual(len(out.split("\n")), 5)
+        self.assertIn("#", out)
+        self.assertLess(len(out.split("\n")[0]), len(render_banner("HI").split("\n")[0]))
+
+    def test_rainbow_mini(self):
+        out = render_rainbow("HI", font="mini")
+        self.assertIn("\033[", out)
+        self.assertEqual(strip_ansi(out), render_banner("HI", font="mini"))
+
+
+class TestCompletions(unittest.TestCase):
+    def test_bash(self):
+        s = completions_bash()
+        self.assertIn("_vibecode_complete", s)
+        self.assertIn("todo", s)
+        self.assertIn("git-stats", s)
+        self.assertIn("--rainbow", s)
+
+    def test_zsh(self):
+        s = completions_zsh()
+        self.assertIn("#compdef vibecode", s)
+        self.assertIn("'todo:", s)
+        self.assertIn("--rainbow", s)
+
+    def test_fish(self):
+        s = completions_fish()
+        self.assertIn("fish_use_subcommand", s)
+        self.assertIn("-a todo", s)
+        self.assertIn("-l rainbow", s)
 
 
 if __name__ == "__main__":

@@ -36,6 +36,10 @@ jobs:
           python vibecode.py git-stats . --authors 3
           mkdir -p /tmp/fixdemo && python vibecode.py vibe-check /tmp/fixdemo --fix --yes && ls /tmp/fixdemo
           python -m http.server 8899 --bind 127.0.0.1 >/dev/null 2>&1 & echo $! > /tmp/srv.pid; sleep 1; python vibecode.py http http://127.0.0.1:8899/ --no-body; kill $(cat /tmp/srv.pid)
+          python vibecode.py banner "MINI" --font mini
+          python vibecode.py completions bash | grep -q "_vibecode_complete"
+          python vibecode.py completions zsh | grep -q "#compdef vibecode"
+          python vibecode.py completions fish | grep -q "fish_use_subcommand"
       - name: Dogfood — repo must pass its own vibe-check
         run: |
           python vibecode.py vibe-check . --json | python -c "import json,sys; d=json.load(sys.stdin); print(f\"vibe score: {d['score']}/100 ({d['tier']})\"); sys.exit(0 if d['score'] >= 80 else 1)"

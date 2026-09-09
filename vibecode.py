@@ -18,6 +18,7 @@ A single-file CLI with genuinely useful commands:
   uuid        generate UUIDs (v4/v1, upper, no-dashes)
   hash        md5/sha1/sha256/sha512 of text, file or stdin
   http        fetch a URL: status, timing, headers, body preview
+  completions print shell completion script (bash/zsh/fish)
 
 Stdlib only. No pip install needed. Just run it.
 """
@@ -47,7 +48,7 @@ import webbrowser
 from collections import Counter
 from pathlib import Path
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 
 # ---------------------------------------------------------------- colors
@@ -533,12 +534,14 @@ FONT: dict[str, list[str]] = {
 }
 
 
-def render_banner(text: str, fill: str = "#", sep: str = "  ") -> str:
-    """Render *text* with the built-in 5x5 pixel font."""
+def render_banner(text: str, fill: str = "#", sep: str | None = None, font: str = "block") -> str:
+    """Render *text* with a built-in pixel font (block 5x5 or mini 5x3)."""
+    fontdict, default_sep = FONTS.get(font, FONTS["block"])
+    sep = default_sep if sep is None else sep
     fill = (fill or "#")[0]
     rows = [""] * 5
     for ch in text.upper():
-        glyph = FONT.get(ch, FONT["?"])
+        glyph = fontdict.get(ch, fontdict["?"])
         for i in range(5):
             rows[i] += glyph[i].replace("#", fill) + sep
     return "\n".join(r.rstrip() for r in rows)
@@ -546,9 +549,9 @@ def render_banner(text: str, fill: str = "#", sep: str = "  ") -> str:
 
 def cmd_banner(args: argparse.Namespace) -> int:
     if getattr(args, "rainbow", False):
-        print(render_rainbow(args.text, fill=args.char))
+        print(render_rainbow(args.text, fill=args.char, font=getattr(args, "font", "block")))
     else:
-        print(paint(render_banner(args.text, fill=args.char), C.MAGENTA + C.BOLD))
+        print(paint(render_banner(args.text, fill=args.char, font=getattr(args, "font", "block")), C.MAGENTA + C.BOLD))
     return 0
 
 
@@ -1450,15 +1453,16 @@ def strip_ansi(s: str) -> str:
     return re.sub(r"\033\[[0-9;]+m", "", s)
 
 
-def render_rainbow(text: str, fill: str = "#") -> str:
+def render_rainbow(text: str, fill: str = "#", font: str = "block") -> str:
     if os.environ.get("NO_COLOR"):
-        return render_banner(text, fill)
+        return render_banner(text, fill, font=font)
+    fontdict, _sep = FONTS.get(font, FONTS["block"])
     fill = (fill or "#")[0]
     rows = [""] * 5
     for ch in text.upper():
-        glyph = FONT.get(ch, FONT["?"])
+        glyph = fontdict.get(ch, fontdict["?"])
         for i in range(5):
-            rows[i] += glyph[i].replace("#", fill) + "  "
+            rows[i] += glyph[i].replace("#", fill) + _sep
     out = []
     for row in rows:
         line = ""
@@ -1469,6 +1473,184 @@ def render_rainbow(text: str, fill: str = "#") -> str:
                 line += f"\033[{RAINBOW[col % len(RAINBOW)]}m{ch}"
         out.append(line + "\033[0m")
     return "\n".join(out)
+
+
+# ------------------------------------------------------- banner mini
+
+# Compact 5x3 pixel font. Every glyph is 5 rows of exactly 3 chars.
+FONT_MINI: dict[str, list[str]] = {
+    "A": [" # ", "# #", "###", "# #", "# #"],
+    "B": ["## ", "# #", "## ", "# #", "## "],
+    "C": [" ##", "#  ", "#  ", "#  ", " ##"],
+    "D": ["## ", "# #", "# #", "# #", "## "],
+    "E": ["###", "#  ", "## ", "#  ", "###"],
+    "F": ["###", "#  ", "## ", "#  ", "#  "],
+    "G": [" ##", "#  ", "# #", "# #", " ##"],
+    "H": ["# #", "# #", "###", "# #", "# #"],
+    "I": ["###", " # ", " # ", " # ", "###"],
+    "J": ["###", "  #", "  #", "# #", " # "],
+    "K": ["# #", "## ", "#  ", "## ", "# #"],
+    "L": ["#  ", "#  ", "#  ", "#  ", "###"],
+    "M": ["# #", "###", "###", "# #", "# #"],
+    "N": ["## ", "# #", "# #", "# #", "# #"],
+    "O": [" # ", "# #", "# #", "# #", " # "],
+    "P": ["###", "# #", "###", "#  ", "#  "],
+    "Q": [" # ", "# #", "# #", "# #", " ##"],
+    "R": ["## ", "# #", "## ", "# #", "# #"],
+    "S": [" ##", "#  ", " # ", "  #", "## "],
+    "T": ["###", " # ", " # ", " # ", " # "],
+    "U": ["# #", "# #", "# #", "# #", "###"],
+    "V": ["# #", "# #", "# #", "# #", " # "],
+    "W": ["# #", "# #", "# #", "###", "###"],
+    "X": ["# #", "# #", " # ", "# #", "# #"],
+    "Y": ["# #", "# #", " # ", " # ", " # "],
+    "Z": ["###", "  #", " # ", "#  ", "###"],
+    "0": ["###", "# #", "# #", "# #", "###"],
+    "1": [" # ", "## ", " # ", " # ", "###"],
+    "2": ["###", "  #", " # ", "#  ", "###"],
+    "3": ["###", "  #", " # ", "  #", "###"],
+    "4": ["# #", "# #", "###", "  #", "  #"],
+    "5": ["###", "#  ", "###", "  #", "###"],
+    "6": [" ##", "#  ", "###", "# #", " # "],
+    "7": ["###", "  #", " # ", " # ", " # "],
+    "8": [" # ", "# #", " # ", "# #", " # "],
+    "9": [" # ", "# #", "###", "  #", "## "],
+    " ": ["   ", "   ", "   ", "   ", "   "],
+    "-": ["   ", "   ", "###", "   ", "   "],
+    "_": ["   ", "   ", "   ", "   ", "###"],
+    "!": [" # ", " # ", " # ", "   ", " # "],
+    "?": ["###", "  #", " # ", "   ", " # "],
+    ".": ["   ", "   ", "   ", "   ", " # "],
+    ":": ["   ", " # ", "   ", " # ", "   "],
+    "/": ["  #", "  #", " # ", "#  ", "#  "],
+    "+": ["   ", " # ", "###", " # ", "   "],
+    "*": ["   ", "# #", " # ", "# #", "   "],
+    "#": ["# #", "###", "# #", "###", "# #"],
+}
+
+FONTS = {"block": (FONT, "  "), "mini": (FONT_MINI, " ")}
+
+
+# ------------------------------------------------------- completions
+
+COMPLETION_COMMANDS = [
+    ("analyze", "scan a project"),
+    ("vibe-check", "score repo health"),
+    ("banner", "ASCII banners"),
+    ("stats", "system info"),
+    ("json", "JSON tools"),
+    ("b64", "base64 tools"),
+    ("passgen", "password generator"),
+    ("pomodoro", "focus timer"),
+    ("dashboard", "live dashboard"),
+    ("serve", "serve playground"),
+    ("todo", "TODO manager"),
+    ("git-stats", "git statistics"),
+    ("lorem", "placeholder text"),
+    ("uuid", "UUID generator"),
+    ("hash", "checksums"),
+    ("http", "fetch a URL"),
+    ("completions", "shell completions"),
+]
+
+COMPLETION_FLAGS: dict[str, list[str]] = {
+    "analyze": ["--json", "--ascii", "--top"],
+    "vibe-check": ["--roast", "--json", "--fix", "--yes"],
+    "banner": ["--char", "--rainbow", "--font"],
+    "stats": [],
+    "json": ["--indent", "--sort-keys", "--minify", "--validate", "--out"],
+    "b64": ["encode", "decode", "--file"],
+    "passgen": ["--length", "--count", "--no-symbols"],
+    "pomodoro": ["--focus", "--rest", "--cycles"],
+    "dashboard": ["--interval", "--once"],
+    "serve": ["--dir", "--host", "--port", "--no-open"],
+    "todo": ["add", "list", "done", "undone", "rm", "clear"],
+    "git-stats": ["--authors", "--ascii"],
+    "lorem": ["--words", "--sentences", "--paragraphs"],
+    "uuid": ["--count", "--v1", "--upper", "--no-dashes"],
+    "hash": ["--algo", "--all", "--file"],
+    "http": ["--method", "--timeout", "--headers", "--body", "--no-body"],
+    "completions": ["bash", "zsh", "fish"],
+}
+
+
+def completions_bash() -> str:
+    cmds = " ".join(n for n, _ in COMPLETION_COMMANDS)
+    cases = "\n".join(
+        f'    {name}) flags="{" ".join(flags + ["--help"])}";;'
+        for name, flags in [(n, COMPLETION_FLAGS.get(n, [])) for n, _ in COMPLETION_COMMANDS]
+    )
+    return f"""# vibecode bash completion — install with:
+#   vibecode completions bash >> ~/.bashrc
+_vibecode_complete() {{
+  local cur cmd cmds flags
+  cmds="{cmds}"
+  if [[ $COMP_CWORD -eq 1 ]]; then
+    COMPREPLY=($(compgen -W "$cmds" -- "${{COMP_WORDS[1]}}"))
+    return 0
+  fi
+  cmd="${{COMP_WORDS[1]}}"
+  cur="${{COMP_WORDS[COMP_CWORD]}}"
+  case "$cmd" in
+{cases}
+    *) flags="--help";;
+  esac
+  COMPREPLY=($(compgen -W "$flags" -- "$cur"))
+}}
+complete -F _vibecode_complete vibecode
+"""
+
+
+def completions_zsh() -> str:
+    entries = "\n".join(f"    '{n}:{h}'" for n, h in COMPLETION_COMMANDS)
+    cases = "\n".join(
+        f"        {n}) _arguments {' '.join(repr('--' + f[2:] if f.startswith('--') else f) for f in flags + ['--help'])} && return;;"
+        for n, flags in [(n, COMPLETION_FLAGS.get(n, [])) for n, _ in COMPLETION_COMMANDS]
+    )
+    return f"""#compdef vibecode
+# vibecode zsh completion — save as _vibecode somewhere in your $fpath
+_vibecode() {{
+  local -a cmds
+  cmds=(
+{entries}
+  )
+  _arguments -C '1:command:->cmd' '*::arg:->args'
+  case $state in
+    cmd) _describe 'command' cmds;;
+    args)
+      case $words[2] in
+{cases}
+      esac;;
+  esac
+}}
+_vibecode "$@"
+"""
+
+
+def completions_fish() -> str:
+    out = ["# vibecode fish completion — save to ~/.config/fish/completions/vibecode.fish"]
+    for n, h in COMPLETION_COMMANDS:
+        out.append(f"complete -c vibecode -f -n __fish_use_subcommand -a {n} -d '{h}'")
+    for n, _ in COMPLETION_COMMANDS:
+        for f in COMPLETION_FLAGS.get(n, []) + ["--help"]:
+            if f.startswith("--"):
+                out.append(f"complete -c vibecode -n '__fish_seen_subcommand_from {n}' -l {f[2:]}")
+            else:
+                out.append(f"complete -c vibecode -f -n '__fish_seen_subcommand_from {n}' -a {f}")
+    return "\n".join(out) + "\n"
+
+
+def cmd_completions(args: argparse.Namespace) -> int:
+    if args.shell == "bash":
+        print(completions_bash())
+    elif args.shell == "zsh":
+        print(completions_zsh())
+    elif args.shell == "fish":
+        print(completions_fish())
+    else:
+        print(err(f"\u2716 Unknown shell: {args.shell} (choose bash, zsh or fish)"), file=sys.stderr)
+        return 2
+    return 0
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -1484,7 +1666,8 @@ def build_parser() -> argparse.ArgumentParser:
                "  vibecode todo add 'ship it'    tiny TODO manager\n"
                "  vibecode git-stats .           authors + punchcard\n"
                "  vibecode http example.com      fetch a URL\n"
-               "  vibecode vibe-check . --fix    scaffold missing files\n",
+               "  vibecode vibe-check . --fix    scaffold missing files\n"
+               "  eval \"$(vibecode completions bash)\"  tab-completion\n",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
@@ -1509,6 +1692,7 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("text", help="text to render (A-Z, 0-9, few symbols)")
     b.add_argument("--char", default="#", help="fill character (default: #)")
     b.add_argument("--rainbow", action="store_true", help="neon gradient colors")
+    b.add_argument("--font", choices=["block", "mini"], default="block", help="pixel font (default: block)")
     b.set_defaults(func=cmd_banner)
 
     s = sub.add_parser("stats", help="show system info")
@@ -1605,6 +1789,10 @@ def build_parser() -> argparse.ArgumentParser:
     ht.add_argument("--body", type=int, default=500, help="body preview bytes (default: 500)")
     ht.add_argument("--no-body", action="store_true", help="skip body preview")
     ht.set_defaults(func=cmd_http)
+
+    cp = sub.add_parser("completions", help="print shell completion script")
+    cp.add_argument("shell", choices=["bash", "zsh", "fish"], help="which shell")
+    cp.set_defaults(func=cmd_completions)
 
     return p
 

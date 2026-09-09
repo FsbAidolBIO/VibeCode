@@ -16,7 +16,7 @@ Two things, both genuinely useful, both work out of the box:
 | | What | Deps | Run it |
 |---|---|---|---|
 | 💻 | **Terminal CLI** — `vibecode.py`: project analyzer, repo vibe-check, TODO manager, git stats, live dashboard… | *none* (Python stdlib) | `python vibecode.py --help` |
-| 🌐 | **Web playground** — `index.html`: JSON formatter, regex tester, Base64, password generator, pomodoro, sorting visualizer, Markdown preview, color tools, cron, JWT, lorem, case converter | *none* (single file, offline) | double-click it, or `python vibecode.py serve` |
+| 🌐 | **Web playground** — `index.html`: JSON formatter, regex tester, Base64, password generator, pomodoro, sorting visualizer, Markdown preview, color tools, cron, JWT, lorem, case converter, unix time, text codecs | *none* (single file, offline) | double-click it, or `python vibecode.py serve` |
 
 No `pip install`. No `npm install`. No signup, no tracking, no build step. Clone it, run it, love it.
 
@@ -33,7 +33,7 @@ python vibecode.py analyze .              # what is this project made of?
 python vibecode.py serve                  # open the web playground 🌐
 ```
 
-## 💻 CLI — 16 commands, 1 file, 0 deps
+## 💻 CLI — 17 commands, 1 file, 0 deps
 
 Just Python 3.9+ and vibes:
 
@@ -41,7 +41,7 @@ Just Python 3.9+ and vibes:
 |---|---|
 | `analyze [path]` | Languages, line counts, biggest files, ASCII charts (`--json` for scripts) |
 | `vibe-check [path]` | Scores any repo 0–100 (`--roast` for pain, `--fix` scaffolds the missing bits!) |
-| `banner TEXT` | Big ASCII banners from a built-in pixel font — no `figlet` needed (`--rainbow` for neon 🌈) |
+| `banner TEXT` | Big ASCII banners from a built-in pixel font — no `figlet` needed (`--rainbow` for neon 🌈, `--font mini` for compact) |
 | `dashboard` | Live terminal dashboard: clock, CPU/RAM/disk, git branch, project stats |
 | `pomodoro` | 25/5 focus timer with progress bar right in your terminal 🍅 |
 | `stats` | System snapshot: OS, Python, CPUs, load, memory, disk |
@@ -55,32 +55,35 @@ Just Python 3.9+ and vibes:
 | `uuid` | Fresh UUIDs: v4/v1, `--upper`, `--no-dashes` |
 | `hash` | md5/sha1/sha256/sha512 digests of text, file or stdin |
 | `http` | Fetch a URL: status code, timing, headers, body preview |
+| `completions` | Print tab-completion script for bash / zsh / fish |
 
 Real output, zero mockups:
+
+![VibeCode CLI vibe-check](assets/terminal.svg)
 
 ```
 $ python vibecode.py analyze . --top 5
 
   📊  VibeCode analyze  —  /home/user/VibeCode
 
-   Files:  12   Lines:  3838   Size:  168.1 KB
+   Files:  13   Lines:  4378   Size:  193.6 KB
    (skipped 1 binary file(s))
 
    Languages
-   Python            3 files    2,083 lines  ██████████████████████
-   HTML              1 files    1,293 lines  ██████████████░░░░░░░░
-   Markdown          3 files      303 lines  ███░░░░░░░░░░░░░░░░░░░
-   YAML              1 files       60 lines  █░░░░░░░░░░░░░░░░░░░░░
-   SVG               1 files       41 lines  ░░░░░░░░░░░░░░░░░░░░░░
+   Python            3 files    2,320 lines  ██████████████████████
+   HTML              1 files    1,535 lines  ███████████████░░░░░░░
+   Markdown          3 files      330 lines  ███░░░░░░░░░░░░░░░░░░░
+   SVG               2 files       71 lines  █░░░░░░░░░░░░░░░░░░░░░
+   YAML              1 files       64 lines  █░░░░░░░░░░░░░░░░░░░░░
    Other             2 files       31 lines  ░░░░░░░░░░░░░░░░░░░░░░
    TOML              1 files       27 lines  ░░░░░░░░░░░░░░░░░░░░░░
 
    Largest files (top 5)
-     70.1 KB    1,293 lines  index.html
-     60.6 KB    1,628 lines  vibecode.py
-     16.4 KB      455 lines  tests/test_vibecode.py
-     12.0 KB      239 lines  README.md
-      2.5 KB       60 lines  .github/workflows/ci.yml
+     82.3 KB    1,535 lines  index.html
+     67.7 KB    1,816 lines  vibecode.py
+     18.1 KB      504 lines  tests/test_vibecode.py
+     12.7 KB      250 lines  README.md
+      2.9 KB       30 lines  assets/terminal.svg
 
    Verdict: a healthy side project 🌱
 ```
@@ -139,7 +142,7 @@ $ python vibecode.py dashboard . --once
 
 > Want it as a real command? `pip install .` (or `pipx install .`) gives you a global `vibecode` — still zero dependencies.
 
-## 🌐 Web playground — 13 tools in one file
+## 🌐 Web playground — 15 tools in one file
 
 ![VibeCode playground visual](assets/hero.png)
 
@@ -152,14 +155,18 @@ $ python vibecode.py dashboard . --once
 | 🔍 Regex | Live highlighting, match list, capture groups, `g i m s` flags + find/replace mode |
 | 🔐 Base64 | Unicode-safe encode/decode |
 | 🎲 Password | `crypto.getRandomValues()`, length slider, live entropy meter |
-| 🍅 Pomodoro | Focus/break cycles, progress ring, WebAudio chime, cycle dots |
-| 📊 Sorting | Animated bubble / selection / insertion / quick / merge sort with counters |
+| 🍅 Pomodoro | Focus/break cycles, progress ring, chime, cycle dots, desktop notifications |
+| 📊 Sorting | Animated bubble / selection / insertion / quick / merge sort + 🏁 race mode |
 | 📝 Markdown | Live preview, built-in mini parser, copy-as-HTML |
 | 🎨 Colors | Palette generator + WCAG contrast checker + gradient builder |
 | ⏰ Cron | Cron expression → human description + next 5 runs |
-| 🔑 JWT | Decode header/payload, inspect claims, verify HS256 signatures |
+| 🔑 JWT | Decode header/payload, inspect claims, verify HS256, sign test tokens |
 | 📝 Lorem | Lorem ipsum paragraphs in one click |
 | Aa Case | camelCase, snake_case, kebab-case… click any to copy |
+| ⏱ Unix | Timestamp ↔ date converter, relative time, live clock |
+| 🔤 Codecs | URL, HTML entities, ROT13, slugify |
+
+> 🌙 The whole playground has a dark/light theme toggle (top-right corner).
 
 Run it:
 
@@ -180,19 +187,20 @@ This repo scores **100/100 LEGENDARY** on its own `vibe-check` — and CI fails 
     python vibecode.py vibe-check . --json | python -c "...assert score >= 80..."
 ```
 
-Plus 42 unit tests (stdlib `unittest`, no pytest needed) and an embedded-JS syntax check for `index.html` on every push, across Python 3.9/3.11/3.12.
+Plus 49 unit tests (stdlib `unittest`, no pytest needed) and an embedded-JS syntax check for `index.html` on every push, across Python 3.9/3.11/3.12.
 
 ## 📁 Structure
 
 ```
 VibeCode/
-├── vibecode.py            # the CLI — 16 commands, stdlib only
-├── index.html             # the web playground — 13 tools, single file
+├── vibecode.py            # the CLI — 17 commands, stdlib only
+├── index.html             # the web playground — 15 tools, single file
 ├── tests/
-│   └── test_vibecode.py   # 42 tests, unittest, zero deps
+│   └── test_vibecode.py   # 49 tests, unittest, zero deps
 ├── assets/
 │   ├── banner.svg         # README banner (hand-made, crisp)
-│   └── hero.png           # playground artwork
+│   ├── hero.png           # playground artwork
+│   └── terminal.svg       # CLI screenshot above
 ├── .github/workflows/ci.yml  # tests + JS check + vibe-check gate
 ├── CONTRIBUTING.md        # keep it dependency-free 🙏
 ├── pyproject.toml         # optional: pip install . → global `vibecode`
@@ -206,9 +214,12 @@ VibeCode/
 - [x] `vibecode todo` — terminal TODO manager ✅ v1.1.0
 - [x] `vibecode git-stats` — authors, punchcard, weekly bars ✅ v1.1.0
 - [x] Playground: cron parser, JWT decoder, lorem generator ✅ v1.1.0
-- [ ] Shell completions (`vibecode completions bash|zsh|fish`)
-- [ ] Sorting race mode: every algorithm, same array, one winner 🏁
-- [ ] More playground tools: unix-time converter, HTML entity codec
+- [x] Shell completions (`vibecode completions bash|zsh|fish`) ✅ v1.2.0
+- [x] Sorting race mode ✅ v1.2.0
+- [x] Playground: unix-time converter, text codecs ✅ v1.2.0
+- [ ] More banner fonts (slant? 3D? 👀)
+- [ ] Playground: share state via URL hash
+- [ ] `vibecode notes` — terminal snippet manager
 - [ ] i18n for the playground (🇷🇺 first)
 - [ ] Your idea here — open an issue!
 
@@ -220,9 +231,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). TL;DR: **no new dependencies** — if it
 
 **VibeCode** — это тулкит разработчика с нулем зависимостей:
 
-- 💻 **CLI на Python** (`vibecode.py`, 16 команд): анализ проекта, `vibe-check` репозитория (оценка 0–100, режимы `--roast` 🌶 и `--fix` 🛠), ASCII-баннеры (есть `--rainbow` 🌈), TODO-менеджер, git-статистика с панчкардом, помодоро-таймер, живой дашборд, UUID/lorem/hash/http-утилиты, генератор паролей, Base64, форматирование JSON.
-- 🌐 **Веб-площадка** (`index.html`): 13 инструментов в одном файле — работает даже без интернета: JSON, regex (+replace), Base64, пароли, помодоро, сортировки (+merge), Markdown, цвета (+градиенты), Cron-парсер, JWT-декодер, Lorem, конвертер кейсов.
-- ✅ 42 автотеста, CI на каждый пуш, MIT-лицензия.
+- 💻 **CLI на Python** (`vibecode.py`, 17 команд): анализ проекта, `vibe-check` репозитория (оценка 0–100, режимы `--roast` 🌶 и `--fix` 🛠), ASCII-баннеры (`--rainbow` 🌈, шрифт `mini`), TODO-менеджер, git-статистика с панчкардом, помодоро-таймер, живой дашборд, UUID/lorem/hash/http-утилиты, shell-completions, генератор паролей, Base64, форматирование JSON.
+- 🌐 **Веб-площадка** (`index.html`): 15 инструментов в одном файле — работает даже без интернета: JSON, regex (+replace), Base64, пароли, помодоро, сортировки (+merge, гонки 🏁), Markdown, цвета (+градиенты), Cron-парсер, JWT-декодер с подписью, Lorem, конвертер кейсов, Unix-время, кодеки текста.
+- ✅ 49 автестов, CI на каждый пуш, MIT-лицензия.
 
 ```bash
 git clone https://github.com/FsbAidolBIO/VibeCode.git && cd VibeCode
