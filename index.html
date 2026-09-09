@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VibeCode Playground — free dev toolkit in one file</title>
+<meta name="description" content="VibeCode Playground: JSON formatter, regex tester, Base64, password generator, pomodoro, sorting visualizer, markdown preview and color tools. Single HTML file, works offline.">
+<style>
+:root{
+  --bg:#070b16; --panel:#0d1428; --panel2:#111a33; --line:#1e2a4d;
+  --text:#e8edf7; --muted:#8b96b5;
+  --cyan:#22d3ee; --violet:#a78bfa; --pink:#f472b6;
+  --green:#34d399; --yellow:#fbbf24; --red:#f87171;
+  --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,sans-serif;min-height:100vh;line-height:1.55}
+.bg-blobs{position:fixed;inset:0;z-index:-1;overflow:hidden}
+.bg-blobs span{position:absolute;border-radius:50%;filter:blur(110px);opacity:.28;animation:float 16s ease-in-out infinite alternate}
+.bg-blobs span:nth-child(1){width:480px;height:480px;left:-140px;top:-140px;background:#0ea5e9}
+.bg-blobs span:nth-child(2){width:420px;height:420px;right:-120px;top:10%;background:#8b5cf6;animation-delay:-6s}
+.bg-blobs span:nth-child(3){width:380px;height:380px;left:30%;bottom:-160px;background:#ec4899;animation-delay:-11s}
+@keyframes float{from{transform:translateY(0) scale(1)}to{transform:translateY(40px) scale(1.08)}}
+.topbar{max-width:1120px;margin:0 auto;padding:26px 20px 6px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{font-size:30px;font-weight:800;letter-spacing:-.5px;background:linear-gradient(90deg,var(--cyan),var(--violet),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+.tagline{color:var(--muted);font-size:14px}
+.tagline b{color:var(--text)}
+.pill{margin-left:auto;font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:4px 12px;background:rgba(255,255,255,.02)}
+.pill b{color:var(--green)}
+.tabs{max-width:1120px;margin:14px auto 0;padding:0 20px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:thin}
+.tab-btn{flex:0 0 auto;border:1px solid var(--line);background:rgba(255,255,255,.02);color:var(--muted);border-radius:10px;padding:9px 14px;font-size:14px;cursor:pointer;transition:.18s}
+.tab-btn:hover{color:var(--text);border-color:#33456f;transform:translateY(-1px)}
+.tab-btn.active{color:#06121f;font-weight:700;background:linear-gradient(90deg,var(--cyan),var(--violet));border-color:transparent;box-shadow:0 4px 22px rgba(34,211,238,.35)}
+.container{max-width:1120px;margin:0 auto;padding:18px 20px 40px}
+.tab-panel{display:none;animation:fade .25s ease}
+.tab-panel.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.012));border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.card h2{font-size:19px;margin-bottom:4px}
+.card p.desc{color:var(--muted);font-size:14px;margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:820px){.grid2,.grid3{grid-template-columns:1fr}}
+label.lbl{display:block;font-size:13px;color:var(--muted);margin:10px 0 6px}
+label.lbl:first-child{margin-top:0}
+textarea,input[type=text],input[type=number],select{width:100%;background:#0a1022;border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 12px;font-size:14px;outline:none;transition:.15s}
+textarea{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;min-height:170px;resize:vertical;line-height:1.5}
+textarea:focus,input:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(34,211,238,.12)}
+input[type=range]{width:100%;accent-color:var(--cyan)}
+input[type=checkbox]{accent-color:var(--cyan);width:16px;height:16px;vertical-align:-3px}
+input[type=color]{width:52px;height:38px;border:1px solid var(--line);border-radius:8px;background:#0a1022;padding:2px;cursor:pointer}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btn{border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--text);border-radius:10px;padding:9px 16px;font-size:14px;cursor:pointer;transition:.15s}
+.btn:hover{border-color:#33456f;transform:translateY(-1px)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn.primary{background:linear-gradient(90deg,var(--cyan),var(--violet));border:none;color:#06121f;font-weight:700}
+.btn.primary:hover{box-shadow:0 4px 20px rgba(34,211,238,.35)}
+.btn.danger{border-color:#5b2333;color:var(--red)}
+.btn.small{padding:6px 12px;font-size:13px}
+pre.output{background:#080d1d;border:1px solid var(--line);border-radius:10px;padding:14px;font-size:13.5px;overflow:auto;max-height:420px;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.status{font-size:13px;margin-top:10px;min-height:20px}
+.status.ok{color:var(--green)} .status.bad{color:var(--red)} .status.info{color:var(--muted)}
+mark{background:rgba(251,191,36,.35);color:#ffe9b0;border-radius:3px;padding:0 1px}
+.hero{text-align:center;padding:44px 20px 30px}
+.hero h1{font-size:clamp(34px,6vw,58px);font-weight:800;letter-spacing:-1px;line-height:1.1}
+.hero h1 .grad{background:linear-gradient(90deg,var(--cyan),var(--violet),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+.typing{font-family:ui-monospace,Menlo,Consolas,monospace;color:var(--cyan);font-size:16px;min-height:26px;margin-top:12px}
+.typing::after{content:"▋";animation:blink 1s steps(1) infinite;margin-left:2px}
+@keyframes blink{50%{opacity:0}}
+.hero p.sub{color:var(--muted);max-width:640px;margin:10px auto 0}
+.feat{cursor:pointer;transition:.18s}
+.feat:hover{transform:translateY(-3px);border-color:#33456f}
+.feat .ico{font-size:26px}
+.feat h3{font-size:16px;margin:6px 0 4px}
+.feat p{color:var(--muted);font-size:13.5px}
+.snippet{display:flex;gap:8px;align-items:center;background:#080d1d;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:ui-monospace,Menlo,monospace;font-size:13px;overflow-x:auto;white-space:nowrap}
+.snippet code{flex:1;color:var(--green)}
+.kbd{font-family:ui-monospace,monospace;font-size:12px;background:#1a2440;border:1px solid var(--line);border-radius:6px;padding:1px 7px}
+/* pomodoro */
+.pomo-wrap{display:flex;gap:26px;align-items:center;flex-wrap:wrap}
+.ringbox{position:relative;width:220px;height:220px;flex:0 0 auto}
+.ring{width:220px;height:220px;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:10;stroke-linecap:round}
+.ring-bg{stroke:#1a2440}
+.ring-fg{stroke:url(#ringGrad);stroke-dasharray:339.292;stroke-dashoffset:0;transition:stroke-dashoffset .3s linear}
+.ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring-time{font-size:42px;font-weight:800;font-variant-numeric:tabular-nums}
+.ring-mode{color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:2px}
+.mode-btns{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.dots{display:flex;gap:8px;margin-top:14px}
+.dot{width:12px;height:12px;border-radius:50%;background:#1a2440;border:1px solid var(--line)}
+.dot.done{background:var(--green);border-color:var(--green)}
+.numrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.numrow div{flex:1;min-width:90px}
+/* sorting */
+#sortBars{display:flex;align-items:flex-end;gap:2px;height:260px;background:#080d1d;border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:12px}
+.sbar{flex:1;min-width:2px;border-radius:3px 3px 0 0;background:linear-gradient(180deg,var(--cyan),#0e7490);transition:height .05s linear}
+.sbar.cmp{background:linear-gradient(180deg,var(--yellow),#92400e)}
+.sbar.swap{background:linear-gradient(180deg,var(--pink),#9d174d)}
+.sbar.done{background:linear-gradient(180deg,var(--green),#065f46)}
+.sort-stats{display:flex;gap:18px;color:var(--muted);font-size:13px;margin-top:10px;flex-wrap:wrap}
+.sort-stats b{color:var(--text);font-variant-numeric:tabular-nums}
+/* markdown */
+.md-preview{background:#0a0f22;border:1px solid var(--line);border-radius:10px;padding:16px;min-height:170px;max-height:480px;overflow:auto;font-size:14.5px}
+.md-preview h1,.md-preview h2,.md-preview h3,.md-preview h4{margin:.7em 0 .4em;line-height:1.25}
+.md-preview h1{font-size:1.6em;border-bottom:1px solid var(--line);padding-bottom:.3em}
+.md-preview h2{font-size:1.35em} .md-preview h3{font-size:1.15em}
+.md-preview p{margin:.5em 0} .md-preview ul,.md-preview ol{margin:.5em 0 .5em 1.4em}
+.md-preview li{margin:.2em 0}
+.md-preview code{font-family:ui-monospace,Menlo,monospace;background:#1a2440;border-radius:6px;padding:1px 6px;font-size:.88em}
+.md-preview pre{background:#080d1d;border:1px solid var(--line);border-radius:10px;padding:12px;overflow:auto;margin:.6em 0}
+.md-preview pre code{background:none;padding:0}
+.md-preview blockquote{border-left:3px solid var(--violet);color:var(--muted);margin:.6em 0;padding:.2em 0 .2em 1em}
+.md-preview a{color:var(--cyan)} .md-preview hr{border:none;border-top:1px solid var(--line);margin:1em 0}
+.md-preview img{max-width:100%;border-radius:8px}
+/* colors */
+.swatches{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.swatch{flex:1;min-width:110px;border-radius:10px;overflow:hidden;border:1px solid var(--line);cursor:pointer;transition:.15s}
+.swatch:hover{transform:translateY(-2px)}
+.swatch .c{height:74px}
+.swatch .h{font-family:ui-monospace,monospace;font-size:12px;padding:7px 9px;background:#0a1022;text-align:center}
+.contrast-box{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.ratio{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums}
+.badge{font-size:12px;border-radius:999px;padding:3px 12px;border:1px solid var(--line);color:var(--muted)}
+.badge.pass{color:var(--green);border-color:#14532d}
+.badge.fail{color:var(--red);border-color:#5b2333}
+/* misc */
+.checks{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:14px}
+.checks label{display:flex;gap:6px;align-items:center;cursor:pointer;color:var(--text)}
+footer{max-width:1120px;margin:0 auto;padding:10px 20px 34px;color:var(--muted);font-size:13px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+footer .spacer{flex:1}
+#toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:#101a36;border:1px solid var(--cyan);color:var(--text);border-radius:10px;padding:10px 20px;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:99}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.pw-out{font-family:ui-monospace,Menlo,monospace;font-size:17px;word-break:break-all;background:#080d1d;border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:12px;min-height:56px}
+.meter{height:10px;border-radius:99px;background:#1a2440;margin-top:10px;overflow:hidden}
+.meter>div{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--red),var(--yellow),var(--green));transition:width .25s}
+.rx-list{font-family:ui-monospace,monospace;font-size:12.5px;max-height:180px;overflow:auto;margin-top:10px;color:var(--muted)}
+.rx-list div{padding:3px 0;border-bottom:1px dashed #1a2440}
+.rx-list b{color:var(--yellow)}
+@media(max-width:640px){.topbar{padding-top:18px}.logo{font-size:24px}.hero{padding:26px 10px 18px}.pomo-wrap{justify-content:center}}
+</style>
+</head>
+<body>
+<div class="bg-blobs"><span></span><span></span><span></span></div>
+
+<header class="topbar">
+  <div class="logo">✨ VibeCode</div>
+  <div class="tagline">dev toolkit that <b>just works</b> — 1 file, 0 dependencies, 100% offline</div>
+  <div class="pill">⚡ <b>9 tools</b> in one page</div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button class="tab-btn active" data-tab="home">🏠 Home</button>
+  <button class="tab-btn" data-tab="json">📦 JSON</button>
+  <button class="tab-btn" data-tab="regex">🔍 Regex</button>
+  <button class="tab-btn" data-tab="base64">🔐 Base64</button>
+  <button class="tab-btn" data-tab="password">🎲 Password</button>
+  <button class="tab-btn" data-tab="pomodoro">🍅 Pomodoro</button>
+  <button class="tab-btn" data-tab="sorting">📊 Sorting</button>
+  <button class="tab-btn" data-tab="markdown">📝 Markdown</button>
+  <button class="tab-btn" data-tab="colors">🎨 Colors</button>
+</nav>
+
+<main class="container">
+
+  <!-- HOME -->
+  <section class="tab-panel active" id="tab-home">
+    <div class="hero">
+      <h1>Ship faster with<br><span class="grad">good vibes only</span></h1>
+      <div class="typing" id="typing"></div>
+      <p class="sub">Every tool a developer needs daily — formatter, tester, encoder, timer, visualizer — packed into a single HTML file. No signup, no tracking, no build step. Save it, share it, use it forever.</p>
+    </div>
+    <div class="grid3">
+      <div class="card feat" data-goto="json"><div class="ico">📦</div><h3>JSON Formatter</h3><p>Validate, prettify and minify JSON. Sample, copy &amp; download in one click.</p></div>
+      <div class="card feat" data-goto="regex"><div class="ico">🔍</div><h3>Regex Tester</h3><p>Live highlighting, match list and capture groups. Flags included.</p></div>
+      <div class="card feat" data-goto="base64"><div class="ico">🔐</div><h3>Base64 Codec</h3><p>Unicode-safe encode &amp; decode. Emoji survive the round-trip. 🌊</p></div>
+      <div class="card feat" data-goto="password"><div class="ico">🎲</div><h3>Password Generator</h3><p>Cryptographically secure passwords with a live entropy meter.</p></div>
+      <div class="card feat" data-goto="pomodoro"><div class="ico">🍅</div><h3>Pomodoro Timer</h3><p>Focus / break cycles with a progress ring, sound and cycle dots.</p></div>
+      <div class="card feat" data-goto="sorting"><div class="ico">📊</div><h3>Sorting Visualizer</h3><p>Watch bubble, selection, insertion and quick sort battle it out.</p></div>
+      <div class="card feat" data-goto="markdown"><div class="ico">📝</div><h3>Markdown Preview</h3><p>Instant preview with a built-in mini parser. Zero libraries.</p></div>
+      <div class="card feat" data-goto="colors"><div class="ico">🎨</div><h3>Color Tools</h3><p>Harmonious palette generator + WCAG contrast checker.</p></div>
+      <div class="card feat" data-goto="home" id="featCli"><div class="ico">💻</div><h3>+ Terminal CLI</h3><p>Companion Python CLI: analyze, vibe-check, banner, dashboard…</p></div>
+    </div>
+    <div class="card">
+      <h2>💻 Prefer the terminal?</h2>
+      <p class="desc">VibeCode ships with a zero-dependency Python CLI. One file, ten commands.</p>
+      <div class="snippet"><code id="cliSnippet">python vibecode.py vibe-check . --roast</code><button class="btn small" id="copyCli">Copy</button></div>
+    </div>
+  </section>
+
+  <!-- JSON -->
+  <section class="tab-panel" id="tab-json">
+    <div class="card">
+      <h2>📦 JSON Formatter &amp; Validator</h2>
+      <p class="desc">Paste JSON, press <span class="kbd">Ctrl</span>+<span class="kbd">Enter</span> to format. Everything runs locally.</p>
+      <div class="grid2">
+        <div>
+          <label class="lbl" for="jsonInput">Input</label>
+          <textarea id="jsonInput" placeholder='{"hello": "world"}' spellcheck="false"></textarea>
+          <div class="btnrow">
+            <button class="btn primary" id="jsonFormat">✨ Format</button>
+            <button class="btn" id="jsonMinify">🗜 Minify</button>
+            <button class="btn" id="jsonValidate">✔ Validate</button>
+            <button class="btn" id="jsonSample">🎲 Sample</button>
+            <button class="btn danger" id="jsonClear">Clear</button>
+          </div>
+        </div>
+        <div>
+          <label class="lbl">Output</label>
+          <pre class="output" id="jsonOutput">— result appears here —</pre>
+          <div class="btnrow">
+            <button class="btn small" id="jsonCopy">📋 Copy</button>
+            <button class="btn small" id="jsonDownload">⬇ Download</button>
+          </div>
+          <div class="status info" id="jsonStatus"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REGEX -->
+  <section class="tab-panel" id="tab-regex">
+    <div class="card">
+      <h2>🔍 Regex Tester</h2>
+      <p class="desc">Live match highlighting with capture groups. Powered by your browser's RegExp engine.</p>
+      <label class="lbl" for="rxPattern">Pattern</label>
+      <input type="text" id="rxPattern" placeholder="(\w+)@(\w+)\.(\w+)" spellcheck="false" style="font-family:ui-monospace,monospace">
+      <div class="checks" id="rxFlags">
+        <label><input type="checkbox" value="g" checked> global (g)</label>
+        <label><input type="checkbox" value="i"> insensitive (i)</label>
+        <label><input type="checkbox" value="m"> multiline (m)</label>
+        <label><input type="checkbox" value="s"> dotAll (s)</label>
+      </div>
+      <label class="lbl" for="rxText">Test string</label>
+      <textarea id="rxText" spellcheck="false" style="min-height:120px" placeholder="mail me at ada@lovelace.dev or grace@hopper.dev"></textarea>
+      <div class="btnrow">
+        <button class="btn primary" id="rxTest">▶ Test live</button>
+        <button class="btn" id="rxSample">🎲 Sample</button>
+        <button class="btn danger" id="rxClear">Clear</button>
+      </div>
+      <div class="status info" id="rxStatus"></div>
+      <label class="lbl">Highlighted</label>
+      <pre class="output" id="rxOutput">— matches appear here —</pre>
+      <label class="lbl">Matches &amp; groups</label>
+      <div class="rx-list" id="rxList"><div>No matches yet.</div></div>
+    </div>
+  </section>
+
+  <!-- BASE64 -->
+  <section class="tab-panel" id="tab-base64">
+    <div class="card">
+      <h2>🔐 Base64 Encoder / Decoder</h2>
+      <p class="desc">Unicode-safe — Cyrillic, CJK and emoji all survive the round-trip.</p>
+      <div class="grid2">
+        <div>
+          <label class="lbl" for="b64Input">Input</label>
+          <textarea id="b64Input" placeholder="Hello, Vibe! Привет 🌊" spellcheck="false"></textarea>
+          <div class="btnrow">
+            <button class="btn primary" id="b64Encode">🔒 Encode →</button>
+            <button class="btn primary" id="b64Decode">🔓 Decode →</button>
+            <button class="btn danger" id="b64Clear">Clear</button>
+          </div>
+        </div>
+        <div>
+          <label class="lbl">Output</label>
+          <pre class="output" id="b64Output">— result appears here —</pre>
+          <div class="btnrow"><button class="btn small" id="b64Copy">📋 Copy</button></div>
+          <div class="status info" id="b64Status"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PASSWORD -->
+  <section class="tab-panel" id="tab-password">
+    <div class="card">
+      <h2>🎲 Secure Password Generator</h2>
+      <p class="desc">Uses <span class="kbd">crypto.getRandomValues()</span> — never <span class="kbd">Math.random()</span>. Generated locally, never leaves your device.</p>
+      <label class="lbl" for="pwLength">Length: <b id="pwLengthVal">20</b></label>
+      <input type="range" id="pwLength" min="4" max="64" value="20">
+      <div class="checks">
+        <label><input type="checkbox" id="pwUpper" checked> A–Z</label>
+        <label><input type="checkbox" id="pwLower" checked> a–z</label>
+        <label><input type="checkbox" id="pwDigits" checked> 0–9</label>
+        <label><input type="checkbox" id="pwSymbols" checked> !@#$…</label>
+      </div>
+      <div class="btnrow">
+        <button class="btn primary" id="pwGen">🎲 Generate</button>
+        <button class="btn" id="pwCopy">📋 Copy</button>
+      </div>
+      <div class="pw-out" id="pwOut">— press Generate —</div>
+      <div class="meter"><div id="pwMeter"></div></div>
+      <div class="status info" id="pwStatus"></div>
+    </div>
+  </section>
+
+  <!-- POMODORO -->
+  <section class="tab-panel" id="tab-pomodoro">
+    <div class="card">
+      <h2>🍅 Pomodoro Focus Timer</h2>
+      <p class="desc">25 minutes of deep work, 5 minutes of touching grass. Repeat until legendary.</p>
+      <div class="pomo-wrap">
+        <div class="ringbox">
+          <svg class="ring" viewBox="0 0 120 120">
+            <defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#f472b6"/>
+            </linearGradient></defs>
+            <circle class="ring-bg" cx="60" cy="60" r="54"/>
+            <circle class="ring-fg" id="pomoRing" cx="60" cy="60" r="54"/>
+          </svg>
+          <div class="ring-center"><div class="ring-time" id="pomoTime">25:00</div><div class="ring-mode" id="pomoMode">focus</div></div>
+        </div>
+        <div style="flex:1;min-width:240px">
+          <div class="mode-btns">
+            <button class="btn small primary" data-pmode="focus">🎯 Focus</button>
+            <button class="btn small" data-pmode="short">☕ Short break</button>
+            <button class="btn small" data-pmode="long">🌴 Long break</button>
+          </div>
+          <div class="numrow">
+            <div><label class="lbl">Focus (min)</label><input type="number" id="pomoFocusMin" value="25" min="1" max="180"></div>
+            <div><label class="lbl">Short (min)</label><input type="number" id="pomoShortMin" value="5" min="1" max="60"></div>
+            <div><label class="lbl">Long (min)</label><input type="number" id="pomoLongMin" value="15" min="1" max="90"></div>
+          </div>
+          <div class="btnrow">
+            <button class="btn primary" id="pomoToggle">▶ Start</button>
+            <button class="btn" id="pomoReset">↺ Reset</button>
+            <button class="btn" id="pomoSkip">⏭ Skip</button>
+          </div>
+          <label class="lbl">Completed focus sessions</label>
+          <div class="dots" id="pomoDots"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+          <div class="status info" id="pomoStatus">Ready when you are. 🫡</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SORTING -->
+  <section class="tab-panel" id="tab-sorting">
+    <div class="card">
+      <h2>📊 Sorting Visualizer</h2>
+      <p class="desc">Watch classic algorithms sort in real time. <span style="color:var(--yellow)">■</span> comparing, <span style="color:var(--pink)">■</span> swapping, <span style="color:var(--green)">■</span> sorted.</p>
+      <div class="grid2">
+        <div>
+          <label class="lbl" for="sortAlgo">Algorithm</label>
+          <select id="sortAlgo">
+            <option value="bubble">Bubble sort (O(n²))</option>
+            <option value="selection">Selection sort (O(n²))</option>
+            <option value="insertion">Insertion sort (O(n²))</option>
+            <option value="quick">Quick sort (O(n log n)) ⚡</option>
+          </select>
+        </div>
+        <div>
+          <label class="lbl" for="sortSize">Bars: <b id="sortSizeVal">60</b></label>
+          <input type="range" id="sortSize" min="10" max="120" value="60">
+          <label class="lbl" for="sortSpeed">Speed: <b id="sortSpeedVal">60</b></label>
+          <input type="range" id="sortSpeed" min="1" max="100" value="60">
+        </div>
+      </div>
+      <div class="btnrow">
+        <button class="btn primary" id="sortRun">▶ Sort!</button>
+        <button class="btn" id="sortShuffle">🔀 Shuffle</button>
+      </div>
+      <div id="sortBars"></div>
+      <div class="sort-stats"><span>Comparisons: <b id="sortCmp">0</b></span><span>Swaps: <b id="sortSwp">0</b></span><span id="sortDone"></span></div>
+    </div>
+  </section>
+
+  <!-- MARKDOWN -->
+  <section class="tab-panel" id="tab-markdown">
+    <div class="card">
+      <h2>📝 Markdown Preview</h2>
+      <p class="desc">Live preview with a built-in mini parser — headers, lists, code, quotes, links. No libraries.</p>
+      <div class="grid2">
+        <div>
+          <label class="lbl" for="mdInput">Markdown</label>
+          <textarea id="mdInput" spellcheck="false" style="min-height:300px" placeholder="# Hello"></textarea>
+          <div class="btnrow">
+            <button class="btn" id="mdSample">🎲 Sample</button>
+            <button class="btn" id="mdCopyHtml">📋 Copy HTML</button>
+            <button class="btn danger" id="mdClear">Clear</button>
+          </div>
+        </div>
+        <div>
+          <label class="lbl">Preview</label>
+          <div class="md-preview" id="mdPreview"></div>
+          <div class="status info" id="mdStatus"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COLORS -->
+  <section class="tab-panel" id="tab-colors">
+    <div class="card">
+      <h2>🎨 Palette Generator</h2>
+      <p class="desc">Harmonious palettes from color theory. Click any swatch to copy its hex.</p>
+      <label class="lbl" for="palScheme">Scheme</label>
+      <select id="palScheme" style="max-width:280px">
+        <option value="analogous">Analogous (neighbors)</option>
+        <option value="complementary">Complementary (opposites)</option>
+        <option value="triadic">Triadic (triangle)</option>
+        <option value="mono">Monochromatic (shades)</option>
+        <option value="random">Chaos (random) 🎲</option>
+      </select>
+      <div class="btnrow"><button class="btn primary" id="palGen">✨ Generate</button></div>
+      <div class="swatches" id="palOut"></div>
+    </div>
+    <div class="card">
+      <h2>🌓 Contrast Checker (WCAG)</h2>
+      <p class="desc">Check text/background contrast ratio. AA needs ≥ 4.5:1 for normal text.</p>
+      <div class="contrast-box">
+        <div><label class="lbl">Text</label><input type="color" id="ccFg" value="#e8edf7"></div>
+        <div><label class="lbl">Background</label><input type="color" id="ccBg" value="#070b16"></div>
+        <div><label class="lbl">Ratio</label><div class="ratio" id="ccRatio">–</div></div>
+        <div><label class="lbl">Normal text</label><div><span class="badge" id="ccAA">AA</span> <span class="badge" id="ccAAA">AAA</span></div></div>
+        <div><label class="lbl">Large text</label><div><span class="badge" id="ccAALarge">AA-large</span></div></div>
+      </div>
+      <pre class="output" id="ccPreview" style="margin-top:14px">The quick brown fox jumps over the lazy dog. 1234567890</pre>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <span>✨ <b>VibeCode Playground</b> — single file, zero deps, works offline.</span>
+  <span class="spacer"></span>
+  <span>Save this page (Ctrl+S) and keep it forever 💾</span>
+</footer>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+/* ============================== helpers ============================== */
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+let toastTimer = null;
+function toast(msg){
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+async function copyText(text, label){
+  try { await navigator.clipboard.writeText(text); }
+  catch(e){
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch(_){} ta.remove();
+  }
+  toast((label || 'Copied') + ' 📋');
+}
+function setStatus(el, msg, kind){ el.textContent = msg; el.className = 'status ' + (kind || 'info'); }
+
+/* ============================== tabs ============================== */
+function switchTab(name){
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+  try { localStorage.setItem('vibe-tab', name); } catch(e){}
+  if(history.replaceState) history.replaceState(null, '', '#' + name);
+}
+document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+document.querySelectorAll('[data-goto]').forEach(el => el.addEventListener('click', () => {
+  switchTab(el.dataset.goto);
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}));
+$('featCli').addEventListener('click', () => { toast('See the snippet below — grab vibecode.py 💻'); });
+$('copyCli').addEventListener('click', () => copyText($('cliSnippet').textContent, 'Command copied'));
+
+/* typing effect */
+(function(){
+  const phrases = ['> formatting your JSON…', '> testing your regex…', '> timing your pomodoro…', '> sorting your arrays…', '> shipping good vibes…'];
+  const el = $('typing'); let pi = 0, ci = 0, deleting = false;
+  (function tick(){
+    const cur = phrases[pi];
+    el.textContent = cur.slice(0, ci);
+    if(!deleting && ci < cur.length){ ci++; setTimeout(tick, 55); }
+    else if(!deleting){ deleting = true; setTimeout(tick, 1400); }
+    else if(ci > 0){ ci--; setTimeout(tick, 22); }
+    else { deleting = false; pi = (pi + 1) % phrases.length; setTimeout(tick, 300); }
+  })();
+})();
+
+/* ============================== JSON ============================== */
+const JSON_SAMPLE = { project: 'VibeCode', version: '1.0.0', awesome: true, tools: ['json', 'regex', 'pomodoro'], meta: { files: 1, deps: 0 } };
+function jsonProcess(mode){
+  const raw = $('jsonInput').value.trim();
+  if(!raw){ setStatus($('jsonStatus'), 'Paste some JSON first 🙂', 'info'); return; }
+  try {
+    const obj = JSON.parse(raw);
+    if(mode === 'validate'){ setStatus($('jsonStatus'), '✔ Valid JSON — ' + Object.keys(obj).length + ' top-level key(s)', 'ok'); return; }
+    const out = mode === 'minify' ? JSON.stringify(obj) : JSON.stringify(obj, null, 2);
+    $('jsonOutput').textContent = out;
+    setStatus($('jsonStatus'), '✔ Done — ' + out.length + ' chars', 'ok');
+  } catch(e){ setStatus($('jsonStatus'), '✖ Invalid JSON: ' + e.message, 'bad'); }
+}
+$('jsonFormat').addEventListener('click', () => jsonProcess('format'));
+$('jsonMinify').addEventListener('click', () => jsonProcess('minify'));
+$('jsonValidate').addEventListener('click', () => jsonProcess('validate'));
+$('jsonSample').addEventListener('click', () => { $('jsonInput').value = JSON.stringify(JSON_SAMPLE); jsonProcess('format'); });
+$('jsonClear').addEventListener('click', () => { $('jsonInput').value = ''; $('jsonOutput').textContent = '— result appears here —'; setStatus($('jsonStatus'), '', 'info'); });
+$('jsonCopy').addEventListener('click', () => copyText($('jsonOutput').textContent, 'JSON copied'));
+$('jsonDownload').addEventListener('click', () => {
+  const blob = new Blob([$('jsonOutput').textContent], {type: 'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'formatted.json'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+});
+$('jsonInput').addEventListener('keydown', e => { if((e.ctrlKey || e.metaKey) && e.key === 'Enter') jsonProcess('format'); });
+
+/* ============================== Regex ============================== */
+const RX_SAMPLE = { pattern: '(\\w+)@(\\w+)\\.(\\w+)', text: 'mail me at ada@lovelace.dev or grace@hopper.dev — thanks!' };
+function rxTest(){
+  const pattern = $('rxPattern').value;
+  const flags = Array.from(document.querySelectorAll('#rxFlags input:checked')).map(c => c.value).join('');
+  if(!pattern){ setStatus($('rxStatus'), 'Enter a pattern 🙂', 'info'); return; }
+  let re;
+  try { re = new RegExp(pattern, flags.includes('g') ? flags : flags + 'g'); }
+  catch(e){ setStatus($('rxStatus'), '✖ Bad pattern: ' + e.message, 'bad'); return; }
+  const text = $('rxText').value;
+  const matches = [];
+  let m, guard = 0;
+  re.lastIndex = 0;
+  while((m = re.exec(text)) !== null && guard < 500){
+    matches.push({ index: m.index, text: m[0], groups: m.slice(1) });
+    guard++;
+    if(m[0] === '') re.lastIndex++; // avoid infinite loop on empty matches
+  }
+  let html = '', pos = 0;
+  for(const mt of matches){
+    html += esc(text.slice(pos, mt.index)) + '<mark>' + (esc(mt.text) || '∅') + '</mark>';
+    pos = mt.index + mt.text.length;
+  }
+  html += esc(text.slice(pos));
+  $('rxOutput').innerHTML = html || '(empty string)';
+  if(matches.length){
+    setStatus($('rxStatus'), '✔ ' + matches.length + ' match(es)' + (guard >= 500 ? ' (showing first 500)' : ''), 'ok');
+    $('rxList').innerHTML = matches.slice(0, 30).map((mt, i) =>
+      '<div><b>#' + i + '</b> @' + mt.index + ' <b>' + esc(mt.text) + '</b>' +
+      (mt.groups.length ? ' → groups: [' + mt.groups.map(g => esc(g === undefined ? '—' : g)).join(' | ') + ']' : '') + '</div>'
+    ).join('');
+  } else {
+    setStatus($('rxStatus'), 'No matches. The regex giveth nothing today.', 'info');
+    $('rxList').innerHTML = '<div>No matches yet.</div>';
+  }
+}
+['rxPattern', 'rxText'].forEach(id => $(id).addEventListener('input', rxTest));
+document.querySelectorAll('#rxFlags input').forEach(c => c.addEventListener('change', rxTest));
+$('rxTest').addEventListener('click', rxTest);
+$('rxSample').addEventListener('click', () => { $('rxPattern').value = RX_SAMPLE.pattern; $('rxText').value = RX_SAMPLE.text; rxTest(); });
+$('rxClear').addEventListener('click', () => { $('rxPattern').value = ''; $('rxText').value = ''; rxTest(); });
+
+/* ============================== Base64 ============================== */
+const te = new TextEncoder(), td = new TextDecoder();
+function b64encodeUnicode(s){
+  const bytes = te.encode(s);
+  let bin = '';
+  for(let i = 0; i < bytes.length; i += 0x8000)
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+function b64decodeUnicode(s){
+  const bin = atob(s.trim());
+  const bytes = new Uint8Array(bin.length);
+  for(let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return td.decode(bytes);
+}
+$('b64Encode').addEventListener('click', () => {
+  try { $('b64Output').textContent = b64encodeUnicode($('b64Input').value); setStatus($('b64Status'), '✔ Encoded', 'ok'); }
+  catch(e){ setStatus($('b64Status'), '✖ ' + e.message, 'bad'); }
+});
+$('b64Decode').addEventListener('click', () => {
+  const raw = $('b64Input').value.trim();
+  if(!/^[A-Za-z0-9+/=\s]*$/.test(raw) || raw.replace(/\s/g, '').length % 4 !== 0){
+    setStatus($('b64Status'), '✖ That does not look like Base64', 'bad'); return;
+  }
+  try { $('b64Output').textContent = b64decodeUnicode(raw); setStatus($('b64Status'), '✔ Decoded', 'ok'); }
+  catch(e){ setStatus($('b64Status'), '✖ Cannot decode: ' + e.message, 'bad'); }
+});
+$('b64Clear').addEventListener('click', () => { $('b64Input').value = ''; $('b64Output').textContent = '— result appears here —'; setStatus($('b64Status'), '', 'info'); });
+$('b64Copy').addEventListener('click', () => copyText($('b64Output').textContent, 'Copied'));
+
+/* ============================== Password ============================== */
+function pwGenerate(){
+  let pool = '';
+  if($('pwUpper').checked) pool += 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  if($('pwLower').checked) pool += 'abcdefghijkmnopqrstuvwxyz';
+  if($('pwDigits').checked) pool += '23456789';
+  if($('pwSymbols').checked) pool += '!@#$%^&*()-_=+[]{};:,.<>?/';
+  if(!pool){ setStatus($('pwStatus'), '✖ Pick at least one character set', 'bad'); return; }
+  const len = parseInt($('pwLength').value, 10);
+  const rnd = new Uint32Array(len);
+  crypto.getRandomValues(rnd);
+  let pw = '';
+  for(let i = 0; i < len; i++) pw += pool[rnd[i] % pool.length];
+  $('pwOut').textContent = pw;
+  const bits = Math.round(len * Math.log2(pool.length));
+  $('pwMeter').style.width = Math.min(100, bits / 1.3) + '%';
+  const label = bits < 50 ? 'weak 😬' : bits < 80 ? 'decent 😐' : bits < 110 ? 'strong 😎' : 'godlike 🔥';
+  setStatus($('pwStatus'), '✔ ~' + bits + ' bits of entropy — ' + label, 'ok');
+}
+$('pwLength').addEventListener('input', e => { $('pwLengthVal').textContent = e.target.value; });
+$('pwGen').addEventListener('click', pwGenerate);
+$('pwCopy').addEventListener('click', () => copyText($('pwOut').textContent, 'Password copied'));
+
+/* ============================== Pomodoro ============================== */
+const pomo = { mode: 'focus', total: 25 * 60, left: 25 * 60, running: false, id: null, endAt: 0, done: 0 };
+const RING_C = 339.292;
+function fmt(s){ s = Math.max(0, Math.round(s)); const m = Math.floor(s / 60), r = s % 60; return String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0'); }
+function pomoRender(){
+  $('pomoTime').textContent = fmt(pomo.left);
+  $('pomoMode').textContent = pomo.mode === 'focus' ? 'focus' : pomo.mode === 'short' ? 'short break' : 'long break';
+  $('pomoRing').style.strokeDashoffset = String(RING_C * (1 - pomo.left / pomo.total));
+  document.title = fmt(pomo.left) + ' • ' + pomo.mode + ' — VibeCode';
+}
+function pomoBeep(times){
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    times = times || 3;
+    for(let i = 0; i < times; i++){
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = 880; o.type = 'sine';
+      const t = ctx.currentTime + i * 0.35;
+      g.gain.setValueAtTime(0.001, t);
+      g.gain.exponentialRampToValueAtTime(0.4, t + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+      o.start(t); o.stop(t + 0.32);
+    }
+  } catch(e){}
+}
+function pomoSetMode(mode){
+  pomo.mode = mode;
+  const mins = mode === 'focus' ? parseInt($('pomoFocusMin').value, 10) || 25
+    : mode === 'short' ? parseInt($('pomoShortMin').value, 10) || 5
+    : parseInt($('pomoLongMin').value, 10) || 15;
+  pomo.total = mins * 60; pomo.left = pomo.total;
+  pomoStop(false);
+  document.querySelectorAll('[data-pmode]').forEach(b => b.classList.toggle('primary', b.dataset.pmode === mode));
+  pomoRender();
+}
+function pomoTick(){
+  pomo.left = Math.max(0, Math.round((pomo.endAt - Date.now()) / 1000));
+  pomoRender();
+  if(pomo.left <= 0){
+    pomoStop(false);
+    pomoBeep(3);
+    if(pomo.mode === 'focus'){
+      pomo.done++;
+      const dots = document.querySelectorAll('#pomoDots .dot');
+      dots.forEach((d, i) => d.classList.toggle('done', i < pomo.done % 4 || pomo.done > 0 && (pomo.done % 4 === 0)));
+      if(pomo.done > 0 && pomo.done % 4 === 0) dots.forEach(d => d.classList.add('done'));
+      setStatus($('pomoStatus'), '✔ Focus complete! Take a ' + (pomo.done % 4 === 0 ? 'long' : 'short') + ' break 🌿', 'ok');
+      pomoSetMode(pomo.done % 4 === 0 ? 'long' : 'short');
+    } else {
+      setStatus($('pomoStatus'), '✔ Break over. Back to glory 💪', 'ok');
+      pomoSetMode('focus');
+    }
+    toast('Timer finished! ⏰');
+  }
+}
+function pomoStart(){
+  if(pomo.running) return;
+  pomo.running = true;
+  pomo.endAt = Date.now() + pomo.left * 1000;
+  pomo.id = setInterval(pomoTick, 250);
+  $('pomoToggle').textContent = '⏸ Pause';
+  setStatus($('pomoStatus'), pomo.mode === 'focus' ? 'Focusing… you got this 🎯' : 'Relaxing… breathe 🌊', 'info');
+}
+function pomoStop(updateBtn){
+  pomo.running = false;
+  clearInterval(pomo.id);
+  if(updateBtn !== false) $('pomoToggle').textContent = '▶ Start';
+}
+$('pomoToggle').addEventListener('click', () => {
+  if(pomo.running){ pomoStop(); setStatus($('pomoStatus'), 'Paused. The grind waits for no one ⏸', 'info'); }
+  else pomoStart();
+});
+$('pomoReset').addEventListener('click', () => { pomoSetMode(pomo.mode); setStatus($('pomoStatus'), 'Reset. Fresh start ✨', 'info'); });
+$('pomoSkip').addEventListener('click', () => {
+  pomoStop();
+  pomoSetMode(pomo.mode === 'focus' ? 'short' : 'focus');
+  setStatus($('pomoStatus'), 'Skipped ⏭', 'info');
+});
+document.querySelectorAll('[data-pmode]').forEach(b => b.addEventListener('click', () => pomoSetMode(b.dataset.pmode)));
+['pomoFocusMin', 'pomoShortMin', 'pomoLongMin'].forEach(id => $(id).addEventListener('change', () => pomoSetMode(pomo.mode)));
+pomoRender();
+
+/* ============================== Sorting ============================== */
+let sArr = [], sRunning = false, sCmp = 0, sSwp = 0;
+function sDelay(){ return 205 - parseInt($('sortSpeed').value, 10) * 2; }
+function sBuild(){
+  const n = parseInt($('sortSize').value, 10);
+  sArr = Array.from({length: n}, (_, i) => 5 + Math.round((i + 1) / n * 95));
+  sShuffle(false);
+}
+function sShuffle(rerender){
+  for(let i = sArr.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [sArr[i], sArr[j]] = [sArr[j], sArr[i]];
+  }
+  sCmp = 0; sSwp = 0; $('sortCmp').textContent = '0'; $('sortSwp').textContent = '0'; $('sortDone').textContent = '';
+  if(rerender !== false) sRender(-1, -1, false);
+}
+function sRender(a, b, done){
+  const box = $('sortBars');
+  if(box.children.length !== sArr.length){
+    box.innerHTML = '';
+    for(const v of sArr){ const d = document.createElement('div'); d.className = 'sbar'; d.style.height = v + '%'; box.appendChild(d); }
+  }
+  for(let i = 0; i < box.children.length; i++){
+    const d = box.children[i];
+    d.style.height = sArr[i] + '%';
+    d.className = 'sbar' + (done ? ' done' : i === a ? ' cmp' : i === b ? ' swap' : '');
+  }
+}
+function sBump(){ $('sortCmp').textContent = sCmp; $('sortSwp').textContent = sSwp; }
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function sSetRunning(on){
+  sRunning = on;
+  ['sortRun', 'sortShuffle', 'sortAlgo', 'sortSize'].forEach(id => $(id).disabled = on);
+}
+async function sBubble(){
+  const n = sArr.length;
+  for(let i = 0; i < n - 1; i++){
+    let swapped = false;
+    for(let j = 0; j < n - 1 - i; j++){
+      sCmp++; sBump(); sRender(j, j + 1, false); await sleep(sDelay());
+      if(sArr[j] > sArr[j + 1]){ [sArr[j], sArr[j + 1]] = [sArr[j + 1], sArr[j]]; sSwp++; sBump(); swapped = true; }
+    }
+    if(!swapped) break;
+  }
+}
+async function sSelection(){
+  const n = sArr.length;
+  for(let i = 0; i < n - 1; i++){
+    let mn = i;
+    for(let j = i + 1; j < n; j++){
+      sCmp++; sBump(); sRender(mn, j, false); await sleep(sDelay());
+      if(sArr[j] < sArr[mn]) mn = j;
+    }
+    if(mn !== i){ [sArr[i], sArr[mn]] = [sArr[mn], sArr[i]]; sSwp++; sBump(); }
+  }
+}
+async function sInsertion(){
+  const n = sArr.length;
+  for(let i = 1; i < n; i++){
+    const key = sArr[i]; let j = i - 1;
+    while(j >= 0){ sCmp++; sBump(); sRender(j, i, false); await sleep(sDelay()); if(sArr[j] <= key) break; sArr[j + 1] = sArr[j]; sSwp++; j--; }
+    sArr[j + 1] = key; sBump();
+  }
+}
+async function sQuick(lo, hi){
+  if(lo >= hi) return;
+  const pivot = sArr[hi]; let i = lo;
+  for(let j = lo; j < hi; j++){
+    sCmp++; sBump(); sRender(j, hi, false); await sleep(sDelay());
+    if(sArr[j] < pivot){ [sArr[i], sArr[j]] = [sArr[j], sArr[i]]; sSwp++; i++; }
+  }
+  [sArr[i], sArr[hi]] = [sArr[hi], sArr[i]]; sSwp++; sBump();
+  await sQuick(lo, i - 1); await sQuick(i + 1, hi);
+}
+$('sortSize').addEventListener('input', e => { $('sortSizeVal').textContent = e.target.value; if(!sRunning) sBuild(); });
+$('sortSpeed').addEventListener('input', e => { $('sortSpeedVal').textContent = e.target.value; });
+$('sortShuffle').addEventListener('click', () => sShuffle());
+$('sortRun').addEventListener('click', async () => {
+  if(sRunning) return;
+  sSetRunning(true);
+  $('sortDone').textContent = '';
+  const t0 = performance.now();
+  const algo = $('sortAlgo').value;
+  if(algo === 'bubble') await sBubble();
+  else if(algo === 'selection') await sSelection();
+  else if(algo === 'insertion') await sInsertion();
+  else await sQuick(0, sArr.length - 1);
+  sRender(-1, -1, true); sBump();
+  $('sortDone').textContent = '✔ Sorted in ' + ((performance.now() - t0) / 1000).toFixed(1) + 's';
+  sSetRunning(false);
+});
+sBuild();
+
+/* ============================== Markdown ============================== */
+const MD_SAMPLE = '# VibeCode Markdown\n\nLive preview with **bold**, *italic* and `inline code`.\n\n## Lists\n\n- ship fast\n- touch grass\n- repeat\n\n1. write code\n2. ???\n3. profit\n\n> Simplicity is the soul of efficiency.\n\n```python\ndef vibe():\n    return "✨"\n```\n\nMade with [VibeCode](https://github.com) — [x] ship it\n';
+function mdInline(s){
+  s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, '<img alt="$1" src="$2">');
+  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  s = s.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/(^|[\s(>])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+  s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+  s = s.replace(/\[x\]/gi, '✅').replace(/\[ \]/g, '⬜');
+  return s;
+}
+function mdRender(){
+  const src = $('mdInput').value;
+  // 1. pull out fenced code blocks
+  const blocks = [];
+  let text = esc(src).replace(/```(\w*)\n([\s\S]*?)```/g, (m, lang, code) => {
+    blocks.push('<pre><code>' + code.replace(/^\n+|\n+$/g, '') + '</code></pre>');
+    return '\u0000' + (blocks.length - 1) + '\u0000';
+  });
+  const lines = text.split('\n');
+  let html = '', inUL = false, inOL = false, inQuote = false;
+  const closeLists = () => {
+    if(inUL){ html += '</ul>'; inUL = false; }
+    if(inOL){ html += '</ol>'; inOL = false; }
+    if(inQuote){ html += '</blockquote>'; inQuote = false; }
+  };
+  for(const line of lines){
+    const t = line.trim();
+    if(/^\u0000\d+\u0000$/.test(t)){ closeLists(); html += blocks[parseInt(t.replace(/\u0000/g, ''), 10)]; continue; }
+    if(!t){ closeLists(); continue; }
+    let m;
+    if((m = t.match(/^(#{1,6})\s+(.*)/))){ closeLists(); const l = m[1].length; html += '<h' + l + '>' + mdInline(m[2]) + '</h' + l + '>'; continue; }
+    if(/^---+$/.test(t)){ closeLists(); html += '<hr>'; continue; }
+    if(t.startsWith('&gt;')){
+      if(!inQuote){ closeLists(); html += '<blockquote>'; inQuote = true; }
+      html += mdInline(t.replace(/^&gt;\s?/, '')) + '<br>';
+      continue;
+    }
+    if((m = t.match(/^[-*]\s+(.*)/))){
+      if(inOL){ html += '</ol>'; inOL = false; } if(inQuote){ html += '</blockquote>'; inQuote = false; }
+      if(!inUL){ html += '<ul>'; inUL = true; }
+      html += '<li>' + mdInline(m[1]) + '</li>'; continue;
+    }
+    if((m = t.match(/^\d+\.\s+(.*)/))){
+      if(inUL){ html += '</ul>'; inUL = false; } if(inQuote){ html += '</blockquote>'; inQuote = false; }
+      if(!inOL){ html += '<ol>'; inOL = false; html += ''; inOL = true; }
+      html += '<li>' + mdInline(m[1]) + '</li>'; continue;
+    }
+    closeLists();
+    html += '<p>' + mdInline(t) + '</p>';
+  }
+  closeLists();
+  $('mdPreview').innerHTML = html || '<p style="color:var(--muted)">— nothing to preview —</p>';
+  const words = src.trim() ? src.trim().split(/\s+/).length : 0;
+  setStatus($('mdStatus'), words + ' word(s)', 'info');
+}
+$('mdInput').addEventListener('input', mdRender);
+$('mdSample').addEventListener('click', () => { $('mdInput').value = MD_SAMPLE; mdRender(); });
+$('mdClear').addEventListener('click', () => { $('mdInput').value = ''; mdRender(); });
+$('mdCopyHtml').addEventListener('click', () => copyText($('mdPreview').innerHTML, 'HTML copied'));
+$('mdInput').value = MD_SAMPLE; mdRender();
+
+/* ============================== Colors ============================== */
+function hslToHex(h, s, l){
+  s /= 100; l /= 100;
+  const k = n => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  const to = x => Math.round(x * 255).toString(16).padStart(2, '0');
+  return '#' + to(f(0)) + to(f(8)) + to(f(4));
+}
+function palGenerate(){
+  const scheme = $('palScheme').value;
+  const base = Math.floor(Math.random() * 360);
+  const sat = 55 + Math.floor(Math.random() * 30);
+  const lit = 50 + Math.floor(Math.random() * 12);
+  let hues;
+  if(scheme === 'analogous') hues = [base - 40, base - 20, base, base + 20, base + 40];
+  else if(scheme === 'complementary') hues = [base, base + 15, base + 180, base + 195, base + 30];
+  else if(scheme === 'triadic') hues = [base, base + 20, base + 120, base + 140, base + 240];
+  else if(scheme === 'mono') hues = [base, base, base, base, base];
+  else hues = Array.from({length: 5}, () => Math.floor(Math.random() * 360));
+  const box = $('palOut'); box.innerHTML = '';
+  hues.forEach((h, i) => {
+    const l = scheme === 'mono' ? 30 + i * 11 : lit + (i % 2 ? -6 : 6);
+    const hex = hslToHex(((h % 360) + 360) % 360, sat, Math.max(12, Math.min(88, l)));
+    const d = document.createElement('div');
+    d.className = 'swatch';
+    d.innerHTML = '<div class="c" style="background:' + hex + '"></div><div class="h">' + hex + '</div>';
+    d.addEventListener('click', () => copyText(hex, hex + ' copied'));
+    box.appendChild(d);
+  });
+}
+$('palGen').addEventListener('click', palGenerate);
+palGenerate();
+function luminance(hex){
+  const c = [1, 3, 5].map(i => {
+    const v = parseInt(hex.substr(i, 2), 16) / 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+}
+function ccUpdate(){
+  const fg = $('ccFg').value, bg = $('ccBg').value;
+  const L1 = luminance(fg), L2 = luminance(bg);
+  const ratio = (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05);
+  $('ccRatio').textContent = ratio.toFixed(2) + ':1';
+  const prev = $('ccPreview');
+  prev.style.color = fg; prev.style.background = bg; prev.style.borderColor = fg;
+  const set = (id, pass) => { const b = $(id); b.classList.toggle('pass', pass); b.classList.toggle('fail', !pass); };
+  set('ccAA', ratio >= 4.5); set('ccAAA', ratio >= 7); set('ccAALarge', ratio >= 3);
+}
+$('ccFg').addEventListener('input', ccUpdate);
+$('ccBg').addEventListener('input', ccUpdate);
+ccUpdate();
+
+/* restore last tab */
+(function(){
+  let tab = (location.hash || '').replace('#', '');
+  if(!tab){ try { tab = localStorage.getItem('vibe-tab') || 'home'; } catch(e){ tab = 'home'; } }
+  if(document.getElementById('tab-' + tab)) switchTab(tab);
+})();
+</script>
+</body>
+</html>
