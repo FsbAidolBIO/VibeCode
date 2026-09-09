@@ -125,6 +125,22 @@ mark{background:rgba(251,191,36,.35);color:#ffe9b0;border-radius:3px;padding:0 1
 .badge{font-size:12px;border-radius:999px;padding:3px 12px;border:1px solid var(--line);color:var(--muted)}
 .badge.pass{color:var(--green);border-color:#14532d}
 .badge.fail{color:var(--red);border-color:#5b2333}
+/* v1.1 additions */
+.kv{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+.kv td{border-top:1px dashed #1a2440;padding:6px 8px;vertical-align:top}
+.kv td:first-child{color:var(--muted);white-space:nowrap;width:140px}
+.kv code{font-family:ui-monospace,monospace;color:var(--cyan)}
+.grad-preview{height:120px;border-radius:10px;border:1px solid var(--line);margin-top:12px}
+.preset-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.case-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+@media(max-width:640px){.case-grid{grid-template-columns:1fr}}
+.case-item{background:#080d1d;border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;transition:.15s;overflow:hidden}
+.case-item:hover{border-color:var(--cyan);transform:translateY(-1px)}
+.case-item .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.case-item .v{font-family:ui-monospace,monospace;font-size:13.5px;word-break:break-all;margin-top:2px}
+.cron-next{font-family:ui-monospace,monospace;font-size:13px;margin-top:8px}
+.cron-next div{padding:4px 0;border-bottom:1px dashed #1a2440}
+.cron-next b{color:var(--green)}
 /* misc */
 .checks{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:14px}
 .checks label{display:flex;gap:6px;align-items:center;cursor:pointer;color:var(--text)}
@@ -147,7 +163,7 @@ footer .spacer{flex:1}
 <header class="topbar">
   <div class="logo">✨ VibeCode</div>
   <div class="tagline">dev toolkit that <b>just works</b> — 1 file, 0 dependencies, 100% offline</div>
-  <div class="pill">⚡ <b>9 tools</b> in one page</div>
+  <div class="pill">⚡ <b>13 tools</b> in one page</div>
 </header>
 
 <nav class="tabs" id="tabs">
@@ -160,6 +176,10 @@ footer .spacer{flex:1}
   <button class="tab-btn" data-tab="sorting">📊 Sorting</button>
   <button class="tab-btn" data-tab="markdown">📝 Markdown</button>
   <button class="tab-btn" data-tab="colors">🎨 Colors</button>
+  <button class="tab-btn" data-tab="cron">⏰ Cron</button>
+  <button class="tab-btn" data-tab="jwt">🔑 JWT</button>
+  <button class="tab-btn" data-tab="lorem">📝 Lorem</button>
+  <button class="tab-btn" data-tab="case">Aa Case</button>
 </nav>
 
 <main class="container">
@@ -180,7 +200,11 @@ footer .spacer{flex:1}
       <div class="card feat" data-goto="sorting"><div class="ico">📊</div><h3>Sorting Visualizer</h3><p>Watch bubble, selection, insertion and quick sort battle it out.</p></div>
       <div class="card feat" data-goto="markdown"><div class="ico">📝</div><h3>Markdown Preview</h3><p>Instant preview with a built-in mini parser. Zero libraries.</p></div>
       <div class="card feat" data-goto="colors"><div class="ico">🎨</div><h3>Color Tools</h3><p>Harmonious palette generator + WCAG contrast checker.</p></div>
-      <div class="card feat" data-goto="home" id="featCli"><div class="ico">💻</div><h3>+ Terminal CLI</h3><p>Companion Python CLI: analyze, vibe-check, banner, dashboard…</p></div>
+            <div class="card feat" data-goto="cron"><div class="ico">⏰</div><h3>Cron Parser</h3><p>Human-readable schedules and next run times for any cron expression.</p></div>
+      <div class="card feat" data-goto="jwt"><div class="ico">🔑</div><h3>JWT Decoder</h3><p>Decode header &amp; payload, inspect claims, verify HS256 signatures.</p></div>
+      <div class="card feat" data-goto="lorem"><div class="ico">📝</div><h3>Lorem Ipsum</h3><p>Placeholder words, sentences and paragraphs in one click.</p></div>
+      <div class="card feat" data-goto="case"><div class="ico">Aa</div><h3>Case Converter</h3><p>camelCase, snake_case, kebab-case and more — click any to copy.</p></div>
+<div class="card feat" data-goto="home" id="featCli"><div class="ico">💻</div><h3>+ Terminal CLI</h3><p>Companion Python CLI: analyze, vibe-check, banner, dashboard…</p></div>
     </div>
     <div class="card">
       <h2>💻 Prefer the terminal?</h2>
@@ -244,6 +268,13 @@ footer .spacer{flex:1}
       <pre class="output" id="rxOutput">— matches appear here —</pre>
       <label class="lbl">Matches &amp; groups</label>
       <div class="rx-list" id="rxList"><div>No matches yet.</div></div>
+      <label class="lbl">Replace <span style="color:var(--muted)">(same pattern &amp; flags — $1, $2… for groups, $&amp; for full match)</span></label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input type="text" id="rxRepl" placeholder="[$1] <$&>" spellcheck="false" style="font-family:ui-monospace,monospace;flex:1;min-width:200px">
+        <button class="btn" id="rxReplace">🔁 Replace</button>
+      </div>
+      <pre class="output" id="rxReplOut" style="margin-top:10px">— replacement appears here —</pre>
+      <div class="status info" id="rxReplStatus"></div>
     </div>
   </section>
 
@@ -348,6 +379,7 @@ footer .spacer{flex:1}
             <option value="selection">Selection sort (O(n²))</option>
             <option value="insertion">Insertion sort (O(n²))</option>
             <option value="quick">Quick sort (O(n log n)) ⚡</option>
+            <option value="merge">Merge sort (O(n log n)) 🌊</option>
           </select>
         </div>
         <div>
@@ -418,9 +450,93 @@ footer .spacer{flex:1}
       </div>
       <pre class="output" id="ccPreview" style="margin-top:14px">The quick brown fox jumps over the lazy dog. 1234567890</pre>
     </div>
+    <div class="card">
+      <h2>🌅 Gradient Builder</h2>
+      <p class="desc">Pick two colors and an angle — grab the CSS.</p>
+      <div class="contrast-box">
+        <div><label class="lbl">From</label><input type="color" id="grA" value="#22d3ee"></div>
+        <div><label class="lbl">To</label><input type="color" id="grB" value="#f472b6"></div>
+        <div style="flex:1;min-width:160px"><label class="lbl">Angle: <b id="grAngleVal">135°</b></label><input type="range" id="grAngle" min="0" max="360" value="135"></div>
+      </div>
+      <div class="grad-preview" id="grPreview"></div>
+      <div class="snippet" style="margin-top:12px"><code id="grCode"></code><button class="btn small" id="grCopy">Copy</button></div>
+      <div class="preset-row" id="grPresets"></div>
+    </div>
   </section>
 
-</main>
+  <!-- CRON -->
+  <section class="tab-panel" id="tab-cron">
+    <div class="card">
+      <h2>⏰ Cron Expression Parser</h2>
+      <p class="desc">Paste a cron expression — get a human description and upcoming runs. Standard 5-field format.</p>
+      <label class="lbl" for="cronExpr">Expression <span style="color:var(--muted)">(minute hour day month weekday)</span></label>
+      <input type="text" id="cronExpr" value="*/15 9-17 * * MON-FRI" spellcheck="false" style="font-family:ui-monospace,monospace">
+      <div class="btnrow" id="cronPresets">
+        <button class="btn small" data-cron="* * * * *">Every minute</button>
+        <button class="btn small" data-cron="0 9 * * MON">Monday 9:00</button>
+        <button class="btn small" data-cron="30 2 1 * *">Monthly 1st</button>
+        <button class="btn small" data-cron="0 0 * * 0">Sunday midnight</button>
+      </div>
+      <div class="status info" id="cronStatus"></div>
+      <label class="lbl">Means</label>
+      <pre class="output" id="cronDesc">—</pre>
+      <label class="lbl">Next 5 runs (your timezone)</label>
+      <div class="cron-next" id="cronNext"></div>
+    </div>
+  </section>
+
+  <!-- JWT -->
+  <section class="tab-panel" id="tab-jwt">
+    <div class="card">
+      <h2>🔑 JWT Decoder &amp; Verifier</h2>
+      <p class="desc">Decode header and payload, inspect claims (<span class="kbd">exp</span> <span class="kbd">iat</span> shown as dates), optionally verify HS256 with your secret. Tokens never leave this page.</p>
+      <label class="lbl" for="jwtToken">Token</label>
+      <textarea id="jwtToken" spellcheck="false" style="min-height:90px" placeholder="eyJhbGciOi..."></textarea>
+      <div class="btnrow">
+        <button class="btn primary" id="jwtDecode">🔓 Decode</button>
+        <button class="btn" id="jwtSample">🎲 Sample</button>
+        <button class="btn danger" id="jwtClear">Clear</button>
+      </div>
+      <div class="status info" id="jwtStatus"></div>
+      <div class="grid2">
+        <div><label class="lbl">Header</label><pre class="output" id="jwtHeader">—</pre></div>
+        <div><label class="lbl">Payload</label><pre class="output" id="jwtPayload">—</pre></div>
+      </div>
+      <label class="lbl">Claims</label>
+      <table class="kv" id="jwtClaims"><tr><td>—</td><td>decode a token first</td></tr></table>
+      <label class="lbl" for="jwtSecret">Verify HS256 signature (optional)</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input type="text" id="jwtSecret" placeholder="secret" spellcheck="false" style="font-family:ui-monospace,monospace;flex:1;min-width:200px">
+        <button class="btn" id="jwtVerify">✔ Verify</button>
+      </div>
+      <div class="status info" id="jwtVerifyStatus"></div>
+    </div>
+  </section>
+
+  <!-- LOREM -->
+  <section class="tab-panel" id="tab-lorem">
+    <div class="card">
+      <h2>📝 Lorem Ipsum Generator</h2>
+      <p class="desc">Classic placeholder text for your beautiful mockups.</p>
+      <div class="numrow" style="max-width:460px">
+        <div><label class="lbl">Paragraphs</label><input type="number" id="loremP" value="3" min="1" max="20"></div>
+        <div style="align-self:end"><button class="btn primary" id="loremGen">✨ Generate</button></div>
+        <div style="align-self:end"><button class="btn" id="loremCopy">📋 Copy</button></div>
+      </div>
+      <pre class="output" id="loremOut" style="margin-top:12px;white-space:pre-wrap">— press Generate —</pre>
+    </div>
+  </section>
+
+  <!-- CASE -->
+  <section class="tab-panel" id="tab-case">
+    <div class="card">
+      <h2>Aa Case Converter</h2>
+      <p class="desc">Convert between naming conventions. Click any result to copy it.</p>
+      <label class="lbl" for="caseInput">Input</label>
+      <input type="text" id="caseInput" value="ship Good Vibes fast" spellcheck="false">
+      <div class="case-grid" id="caseGrid"></div>
+    </div>
+  </section></main>
 
 <footer>
   <span>✨ <b>VibeCode Playground</b> — single file, zero deps, works offline.</span>
@@ -770,6 +886,7 @@ $('sortRun').addEventListener('click', async () => {
   if(algo === 'bubble') await sBubble();
   else if(algo === 'selection') await sSelection();
   else if(algo === 'insertion') await sInsertion();
+  else if(algo === 'merge') await sMerge(0, sArr.length - 1);
   else await sQuick(0, sArr.length - 1);
   sRender(-1, -1, true); sBump();
   $('sortDone').textContent = '✔ Sorted in ' + ((performance.now() - t0) / 1000).toFixed(1) + 's';
@@ -892,6 +1009,278 @@ function ccUpdate(){
 $('ccFg').addEventListener('input', ccUpdate);
 $('ccBg').addEventListener('input', ccUpdate);
 ccUpdate();
+
+/* ============================== Cron ============================== */
+const CRON_MONTHS = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+const CRON_DOW = {sun:0,mon:1,tue:2,wed:3,thu:4,fri:5,sat:6};
+const DOW_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTH_NAMES = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
+function cronOrd(n){ const s = ['th','st','nd','rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
+function cronExpand(field, min, max, names){
+  field = String(field).trim().toLowerCase();
+  if(names) field = field.replace(/[a-z]+/g, m => (names[m] !== undefined ? names[m] : m));
+  const out = new Set();
+  const add = (a, b, step) => { for(let v = a; v <= b; v += step) out.add(v); };
+  for(const part0 of field.split(',')){
+    const part = part0.trim();
+    if(!part) throw new Error('empty part in "' + field + '"');
+    let range = part, step = 1;
+    const slash = part.split('/');
+    if(slash.length > 2) throw new Error('bad step in "' + part + '"');
+    if(slash.length === 2){
+      range = slash[0]; step = parseInt(slash[1], 10);
+      if(!(step >= 1)) throw new Error('bad step in "' + part + '"');
+    }
+    if(range === '' || range === '*'){ add(min, max, step); continue; }
+    const dash = range.split('-');
+    if(dash.length > 2) throw new Error('bad range "' + range + '"');
+    const a = parseInt(dash[0], 10), b = dash.length === 2 ? parseInt(dash[1], 10) : a;
+    if(isNaN(a) || isNaN(b) || a < min || b > max || a > b) throw new Error('out of range ' + min + '-' + max + ': "' + range + '"');
+    add(a, b, step);
+  }
+  if(!out.size) throw new Error('empty field');
+  return out;
+}
+function cronParse(expr){
+  const f = String(expr).trim().split(/\s+/);
+  if(f.length !== 5) throw new Error('expected 5 fields, got ' + f.length);
+  const M = cronExpand(f[0], 0, 59), H = cronExpand(f[1], 0, 23),
+        D = cronExpand(f[2], 1, 31), MO = cronExpand(f[3], 1, 12),
+        W = cronExpand(f[4], 0, 7, CRON_DOW);
+  if(W.has(7)){ W.add(0); W.delete(7); }
+  return {M, H, D, MO, W, domStar: f[2] === '*', dowStar: f[4] === '*'};
+}
+function cronDescribe(c){
+  const sm = [...c.M].sort((a, b) => a - b), sh = [...c.H].sort((a, b) => a - b),
+        sd = [...c.D].sort((a, b) => a - b), smo = [...c.MO].sort((a, b) => a - b),
+        sw = [...c.W].sort((a, b) => a - b);
+  const everyMin = sm.length === 60, everyHour = sh.length === 24;
+  const p2 = n => String(n).padStart(2, '0');
+  let time;
+  if(everyMin && everyHour) time = 'Every minute';
+  else if(everyMin) time = 'Every minute during hour(s) ' + sh.join(', ');
+  else if(sh.length === 1 && sm.length === 1) time = 'At ' + p2(sh[0]) + ':' + p2(sm[0]);
+  else if(sh.length === 1) time = 'At minute(s) ' + sm.join(', ') + ' past ' + p2(sh[0]);
+  else if(sm.length === 1) time = 'At minute ' + sm[0] + ' past ' + sh.length + ' hour(s)';
+  else time = 'At ' + sm.length + ' minute(s) across ' + sh.length + ' hour(s)';
+  let days = '';
+  if(smo.length !== 12) days += ' in ' + smo.map(m => MONTH_NAMES[m]).join(', ');
+  if(!c.domStar && sd.length !== 31) days += ' on day(s) ' + sd.map(cronOrd).join(', ');
+  if(!c.dowStar && sw.length !== 7) days += ' on ' + sw.map(d => DOW_NAMES[d]).join(', ');
+  if(!days) days = ', every day';
+  return time + days;
+}
+function cronMatch(c, dt){
+  if(!c.M.has(dt.getMinutes()) || !c.H.has(dt.getHours()) || !c.MO.has(dt.getMonth() + 1)) return false;
+  const domOk = c.D.has(dt.getDate()), dowOk = c.W.has(dt.getDay());
+  if(c.domStar && c.dowStar) return true;
+  if(c.domStar) return dowOk;
+  if(c.dowStar) return domOk;
+  return domOk || dowOk;
+}
+function cronCompute(expr){
+  const c = cronParse(expr);
+  const runs = [];
+  const dt = new Date();
+  dt.setSeconds(0, 0);
+  dt.setMinutes(dt.getMinutes() + 1);
+  for(let i = 0; i < 525600 && runs.length < 5; i++){
+    if(cronMatch(c, dt)) runs.push(new Date(dt));
+    dt.setMinutes(dt.getMinutes() + 1);
+  }
+  return {desc: cronDescribe(c), runs};
+}
+function cronUpdate(){
+  try {
+    const res = cronCompute($('cronExpr').value);
+    $('cronDesc').textContent = res.desc;
+    setStatus($('cronStatus'), '✔ Valid expression', 'ok');
+    $('cronNext').innerHTML = res.runs.length
+      ? res.runs.map((d, i) => '<div><b>#' + (i + 1) + '</b> ' + esc(d.toLocaleString()) + '</div>').join('')
+      : '<div>No runs in the next year — suspicious schedule 🕵</div>';
+  } catch(e){ setStatus($('cronStatus'), '✖ ' + e.message, 'bad'); $('cronDesc').textContent = '—'; $('cronNext').innerHTML = ''; }
+}
+$('cronExpr').addEventListener('input', cronUpdate);
+document.querySelectorAll('#cronPresets button').forEach(b => b.addEventListener('click', () => { $('cronExpr').value = b.dataset.cron; cronUpdate(); }));
+cronUpdate();
+
+/* ============================== JWT ============================== */
+const JWT_SAMPLE = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
+function b64urlDecode(s){
+  s = String(s).replace(/-/g, '+').replace(/_/g, '/');
+  while(s.length % 4) s += '=';
+  const bin = atob(s);
+  const bytes = new Uint8Array(bin.length);
+  for(let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return td.decode(bytes);
+}
+function b64urlEncode(bytes){
+  let bin = '';
+  for(let i = 0; i < bytes.length; i += 0x8000)
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+let jwtParts = null;
+function jwtDecode(){
+  const raw = $('jwtToken').value.trim();
+  jwtParts = null;
+  setStatus($('jwtVerifyStatus'), '', 'info');
+  if(!raw){ setStatus($('jwtStatus'), 'Paste a token 🙂', 'info'); return; }
+  const parts = raw.split('.');
+  if(parts.length !== 3){ setStatus($('jwtStatus'), '✖ A JWT has 3 parts separated by dots', 'bad'); return; }
+  try {
+    const header = JSON.parse(b64urlDecode(parts[0]));
+    const payload = JSON.parse(b64urlDecode(parts[1]));
+    jwtParts = parts;
+    $('jwtHeader').textContent = JSON.stringify(header, null, 2);
+    $('jwtPayload').textContent = JSON.stringify(payload, null, 2);
+    const now = Math.floor(Date.now() / 1000);
+    let rows = '';
+    for(const k of Object.keys(payload)){
+      const v = payload[k];
+      let extra = '';
+      if((k === 'exp' || k === 'iat' || k === 'nbf') && typeof v === 'number'){
+        extra = ' <span style="color:var(--green)">(' + new Date(v * 1000).toLocaleString() + ')</span>';
+        if(k === 'exp') extra += v < now ? ' <span class="badge fail">expired</span>' : ' <span class="badge pass">valid</span>';
+      }
+      rows += '<tr><td><code>' + esc(k) + '</code></td><td>' + esc(typeof v === 'object' ? JSON.stringify(v) : String(v)) + extra + '</td></tr>';
+    }
+    $('jwtClaims').innerHTML = rows || '<tr><td>—</td><td>empty payload</td></tr>';
+    setStatus($('jwtStatus'), '✔ Decoded — alg: ' + (header.alg || '?'), 'ok');
+  } catch(e){ setStatus($('jwtStatus'), '✖ Cannot decode: ' + e.message, 'bad'); }
+}
+async function jwtVerify(){
+  if(!jwtParts){ setStatus($('jwtVerifyStatus'), 'Decode a token first 🙂', 'info'); return; }
+  const secret = $('jwtSecret').value;
+  if(!secret){ setStatus($('jwtVerifyStatus'), 'Enter the HS256 secret 🙂', 'info'); return; }
+  try {
+    const key = await crypto.subtle.importKey('raw', te.encode(secret), {name: 'HMAC', hash: 'SHA-256'}, false, ['sign']);
+    const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, te.encode(jwtParts[0] + '.' + jwtParts[1])));
+    const ok = b64urlEncode(sig) === jwtParts[2];
+    setStatus($('jwtVerifyStatus'), ok ? '✔ Signature VALID — this token is legit 🎉' : '✖ Signature MISMATCH — wrong secret or tampered token', ok ? 'ok' : 'bad');
+  } catch(e){ setStatus($('jwtVerifyStatus'), '✖ ' + e.message, 'bad'); }
+}
+$('jwtDecode').addEventListener('click', jwtDecode);
+$('jwtVerify').addEventListener('click', jwtVerify);
+$('jwtSample').addEventListener('click', () => { $('jwtToken').value = JWT_SAMPLE; $('jwtSecret').value = 'your-256-bit-secret'; jwtDecode(); });
+$('jwtClear').addEventListener('click', () => {
+  $('jwtToken').value = ''; $('jwtSecret').value = ''; jwtParts = null;
+  $('jwtHeader').textContent = '—'; $('jwtPayload').textContent = '—';
+  $('jwtClaims').innerHTML = '<tr><td>—</td><td>decode a token first</td></tr>';
+  setStatus($('jwtStatus'), '', 'info'); setStatus($('jwtVerifyStatus'), '', 'info');
+});
+
+/* ============================== Lorem ============================== */
+const LOREM_POOL = ('lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex commodo consequat duis aute irure in reprehenderit voluptate velit esse cillum fugiat nulla pariatur excepteur sint occaecat cupidatat non proident sunt culpa qui officia deserunt mollit anim id laborum perspiciatis unde omnis iste natus error voluptatem accusantium doloremque laudantium totam rem aperiam eaque').split(' ');
+function loremBuild(paras){
+  const out = [];
+  for(let p = 0; p < paras; p++){
+    const sentences = [];
+    const n = 3 + Math.floor(Math.random() * 4);
+    for(let s = 0; s < n; s++){
+      const w = 6 + Math.floor(Math.random() * 9), words = [];
+      for(let i = 0; i < w; i++) words.push(LOREM_POOL[Math.floor(Math.random() * LOREM_POOL.length)]);
+      words[0] = words[0][0].toUpperCase() + words[0].slice(1);
+      sentences.push(words.join(' ') + '.');
+    }
+    out.push(sentences.join(' '));
+  }
+  return out.join('\n\n');
+}
+$('loremGen').addEventListener('click', () => {
+  const n = Math.max(1, Math.min(20, parseInt($('loremP').value, 10) || 3));
+  $('loremP').value = n;
+  $('loremOut').textContent = loremBuild(n);
+});
+$('loremCopy').addEventListener('click', () => copyText($('loremOut').textContent, 'Lorem copied'));
+
+/* ============================== Case converter ============================== */
+function caseWords(s){
+  return String(s).replace(/[^A-Za-z0-9]+/g, ' ')
+    .replace(/(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/g, ' ')
+    .trim().split(/\s+/).filter(Boolean).map(w => w.toLowerCase());
+}
+const caseCap = w => w ? w[0].toUpperCase() + w.slice(1) : w;
+function caseConvert(){
+  const words = caseWords($('caseInput').value);
+  const items = [
+    ['camelCase', words.map((w, i) => i ? caseCap(w) : w).join('')],
+    ['PascalCase', words.map(caseCap).join('')],
+    ['snake_case', words.join('_')],
+    ['kebab-case', words.join('-')],
+    ['SCREAMING_SNAKE', words.join('_').toUpperCase()],
+    ['dot.case', words.join('.')],
+    ['path/case', words.join('/')],
+    ['Title Case', words.map(caseCap).join(' ')],
+    ['lowercase', words.join(' ')],
+    ['UPPERCASE', words.join(' ').toUpperCase()]
+  ];
+  $('caseGrid').innerHTML = items.map(pair =>
+    '<div class="case-item" data-v="' + esc(pair[1]) + '"><div class="k">' + pair[0] + '</div><div class="v">' + (esc(pair[1]) || '<span style="color:var(--muted)">—</span>') + '</div></div>'
+  ).join('');
+  document.querySelectorAll('.case-item').forEach(el => el.addEventListener('click', () => copyText(el.dataset.v, 'Copied')));
+}
+$('caseInput').addEventListener('input', caseConvert);
+caseConvert();
+
+/* ============================== Gradient builder ============================== */
+const GR_PRESETS = [
+  ['Sunset', '#ff6b6b', '#feca57'], ['Ocean', '#1e90ff', '#00d2ff'],
+  ['Neon', '#22d3ee', '#f472b6'], ['Candy', '#a78bfa', '#f472b6'],
+  ['Forest', '#11998e', '#38ef7d'], ['Ember', '#f12711', '#f5af19']
+];
+function grUpdate(){
+  const a = $('grA').value, b = $('grB').value, ang = $('grAngle').value;
+  $('grAngleVal').textContent = ang + '°';
+  const css = 'linear-gradient(' + ang + 'deg, ' + a + ', ' + b + ')';
+  $('grPreview').style.background = css;
+  $('grCode').textContent = 'background: ' + css + ';';
+}
+['grA', 'grB'].forEach(id => $(id).addEventListener('input', grUpdate));
+$('grAngle').addEventListener('input', grUpdate);
+$('grCopy').addEventListener('click', () => copyText($('grCode').textContent, 'CSS copied'));
+GR_PRESETS.forEach(preset => {
+  const btn = document.createElement('button');
+  btn.className = 'btn small'; btn.textContent = preset[0];
+  btn.addEventListener('click', () => { $('grA').value = preset[1]; $('grB').value = preset[2]; grUpdate(); });
+  $('grPresets').appendChild(btn);
+});
+grUpdate();
+
+/* ============================== Regex replace ============================== */
+function rxReplace(){
+  const pattern = $('rxPattern').value;
+  const flags = Array.from(document.querySelectorAll('#rxFlags input:checked')).map(c => c.value).join('');
+  if(!pattern){ setStatus($('rxReplStatus'), 'Enter a pattern first 🙂', 'info'); return; }
+  let re;
+  try { re = new RegExp(pattern, flags.includes('g') ? flags : flags + 'g'); }
+  catch(e){ setStatus($('rxReplStatus'), '✖ Bad pattern: ' + e.message, 'bad'); return; }
+  const text = $('rxText').value;
+  const matches = text.match(re);
+  const n = matches ? matches.length : 0;
+  re.lastIndex = 0;
+  $('rxReplOut').textContent = text.replace(re, $('rxRepl').value);
+  setStatus($('rxReplStatus'), n ? '✔ ' + n + ' replacement(s)' : 'No matches — nothing replaced', n ? 'ok' : 'info');
+}
+$('rxReplace').addEventListener('click', rxReplace);
+
+/* ============================== Merge sort ============================== */
+async function sMerge(lo, hi){
+  if(lo >= hi) return;
+  const mid = (lo + hi) >> 1;
+  await sMerge(lo, mid); await sMerge(mid + 1, hi);
+  const left = sArr.slice(lo, mid + 1), right = sArr.slice(mid + 1, hi + 1);
+  let i = 0, j = 0, k = lo;
+  while(i < left.length && j < right.length){
+    sCmp++; sBump(); sRender(lo + i, mid + 1 + j, false); await sleep(sDelay());
+    if(left[i] <= right[j]) sArr[k++] = left[i++];
+    else sArr[k++] = right[j++];
+    sSwp++; sBump();
+  }
+  while(i < left.length){ sArr[k++] = left[i++]; sSwp++; }
+  while(j < right.length){ sArr[k++] = right[j++]; sSwp++; }
+  sBump();
+}
 
 /* restore last tab */
 (function(){

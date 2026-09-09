@@ -12,6 +12,12 @@ A single-file CLI with genuinely useful commands:
   pomodoro    terminal focus timer with progress bar
   dashboard   live terminal dashboard: clock, system, git, project
   serve       serve the VibeCode web playground locally
+  todo        tiny terminal TODO manager (add/list/done/rm)
+  git-stats   authors leaderboard, punchcard heatmap, weekly bars
+  lorem       generate placeholder text (words/sentences/paragraphs)
+  uuid        generate UUIDs (v4/v1, upper, no-dashes)
+  hash        md5/sha1/sha256/sha512 of text, file or stdin
+  http        fetch a URL: status, timing, headers, body preview
 
 Stdlib only. No pip install needed. Just run it.
 """
@@ -21,10 +27,12 @@ import argparse
 import base64
 import binascii
 import datetime
+import hashlib
 import json
 import math
 import os
 import platform
+import random
 import re
 import secrets
 import shutil
@@ -32,11 +40,14 @@ import string
 import subprocess
 import sys
 import time
+import urllib.error
+import urllib.request
+import uuid
 import webbrowser
 from collections import Counter
 from pathlib import Path
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 
 # ---------------------------------------------------------------- colors
@@ -456,6 +467,8 @@ def cmd_vibe_check(args: argparse.Namespace) -> int:
     if not root.exists():
         print(err(f"✖ Path does not exist: {root}"), file=sys.stderr)
         return 2
+    if getattr(args, "fix", False):
+        vibe_fix(root, getattr(args, "yes", False))
     score, checks = vibe_checks(root)
     if args.json:
         print(json.dumps({"root": str(root.resolve()), "score": score,
@@ -532,7 +545,10 @@ def render_banner(text: str, fill: str = "#", sep: str = "  ") -> str:
 
 
 def cmd_banner(args: argparse.Namespace) -> int:
-    print(paint(render_banner(args.text, fill=args.char), C.MAGENTA + C.BOLD))
+    if getattr(args, "rainbow", False):
+        print(render_rainbow(args.text, fill=args.char))
+    else:
+        print(paint(render_banner(args.text, fill=args.char), C.MAGENTA + C.BOLD))
     return 0
 
 
@@ -902,6 +918,559 @@ def cmd_serve(args: argparse.Namespace) -> int:
 
 # ----------------------------------------------------------------- cli
 
+# ------------------------------------------------------------- todo
+
+TODO_FILENAME = "todo.json"
+
+
+def todo_path() -> Path:
+    base = os.environ.get("VIBECODE_HOME")
+    root = Path(base) if base else Path.home() / ".vibecode"
+    return root / TODO_FILENAME
+
+
+def load_todo(path: Path | None = None) -> list[dict]:
+    path = path or todo_path()
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, list) else []
+    except (OSError, json.JSONDecodeError):
+        return []
+
+
+def save_todo(items: list[dict], path: Path | None = None) -> Path:
+    path = path or todo_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(items, indent=2, ensure_ascii=False), encoding="utf-8")
+    return path
+
+
+def todo_add(items: list[dict], text: str) -> dict:
+    nid = max([i.get("id", 0) for i in items] + [0]) + 1
+    entry = {"id": nid, "text": text, "done": False,
+             "created": datetime.datetime.now().isoformat(timespec="seconds")}
+    items.append(entry)
+    return entry
+
+
+def todo_set_done(items: list[dict], tid: int, done: bool) -> bool:
+    for it in items:
+        if it.get("id") == tid:
+            it["done"] = bool(done)
+            return True
+    return False
+
+
+def todo_remove(items: list[dict], tid: int) -> bool:
+    for n, it in enumerate(items):
+        if it.get("id") == tid:
+            del items[n]
+            return True
+    return False
+
+
+def todo_clear_done(items: list[dict]) -> int:
+    before = len(items)
+    items[:] = [i for i in items if not i.get("done")]
+    return before - len(items)
+
+
+def print_todo(items: list[dict], show_all: bool = False) -> None:
+    visible = items if show_all else [i for i in items if not i.get("done")]
+    if not visible:
+        if not items:
+            print(dim("  No tasks. Touch grass instead \U0001f331"))
+        else:
+            print(ok("  All done! Nothing pending \U0001f389"))
+        return
+    print(head("\n  \u2705  TODO\n"))
+    for it in visible:
+        mark = ok("\u2611") if it.get("done") else dim("\u2610")
+        txt = it.get("text", "")
+        if it.get("done"):
+            txt = dim(txt + "  (done)")
+        print(f"   {mark}  #{it.get('id'):>3}  {txt}")
+    left = sum(1 for i in items if not i.get("done"))
+    print(dim(f"\n   {left} pending \u2022 {len(items) - left} done \u2022 stored in {todo_path()}\n"))
+
+
+def cmd_todo(args: argparse.Namespace) -> int:
+    action = args.todo_cmd or "list"
+    items = load_todo()
+    if action == "add":
+        text = " ".join(args.text).strip()
+        if not text:
+            print(err("\u2716 Task text is empty"), file=sys.stderr)
+            return 2
+        entry = todo_add(items, text)
+        save_todo(items)
+        print(ok(f"\u2714 Added #{entry['id']}: {text}"))
+        return 0
+    if action == "list":
+        print_todo(items, show_all=getattr(args, "all", False))
+        return 0
+    if action in ("done", "undone"):
+        if not todo_set_done(items, args.id, action == "done"):
+            print(err(f"\u2716 No task #{args.id}"), file=sys.stderr)
+            return 2
+        save_todo(items)
+        print(ok(f"\u2714 Task #{args.id} marked {'done' if action == 'done' else 'pending'}"))
+        return 0
+    if action == "rm":
+        if not todo_remove(items, args.id):
+            print(err(f"\u2716 No task #{args.id}"), file=sys.stderr)
+            return 2
+        save_todo(items)
+        print(ok(f"\u2714 Removed task #{args.id}"))
+        return 0
+    if action == "clear":
+        if getattr(args, "all", False):
+            n = len(items)
+            items.clear()
+            save_todo(items)
+            print(warn(f"  Cleared all {n} task(s). Fresh start \u2728"))
+            return 0
+        n = todo_clear_done(items)
+        save_todo(items)
+        print(ok(f"\u2714 Removed {n} completed task(s)"))
+        return 0
+    return 2
+
+
+# ---------------------------------------------------------- git-stats
+
+DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
+
+def parse_shortlog(text: str) -> list[tuple[int, str]]:
+    authors = []
+    for line in text.splitlines():
+        m = re.match(r"\s*(\d+)\s+(.*\S)\s*$", line)
+        if m:
+            authors.append((int(m.group(1)), m.group(2)))
+    return authors
+
+
+def punchcard_grid(lines: list[str]) -> list[list[int]]:
+    grid = [[0] * 24 for _ in range(7)]
+    for ln in lines:
+        try:
+            d, h = ln.strip().split(":")
+            d, h = int(d), int(h)
+            if 0 <= d < 7 and 0 <= h < 24:
+                grid[d][h] += 1
+        except ValueError:
+            continue
+    return grid
+
+
+def render_punchcard(grid: list[list[int]], ascii_only: bool = False) -> str:
+    peak = max((v for row in grid for v in row), default=0)
+    cells = (" ", ".", ":", "*", "#") if ascii_only else (" ", "\u2591", "\u2592", "\u2593", "\u2588")
+
+    def cell(v: int) -> str:
+        if peak <= 0 or v <= 0:
+            return cells[0]
+        return cells[min(4, max(1, round(v / peak * 4)))]
+
+    rows = ["       " + "".join(str(h // 10) for h in range(24)),
+            "       " + "".join(str(h % 10) for h in range(24))]
+    for d, name in enumerate(DAY_NAMES):
+        rows.append(f"   {name} " + "".join(cell(v) for v in grid[d]))
+    return "\n".join(rows)
+
+
+def week_buckets(timestamps: list[int], now: float, weeks: int = 12) -> list[int]:
+    buckets = [0] * weeks
+    for ts in timestamps:
+        w = int((now - ts) // (7 * 86400))
+        if 0 <= w < weeks:
+            buckets[weeks - 1 - w] += 1
+    return buckets
+
+
+def render_weeks(buckets: list[int], ascii_only: bool = False) -> str:
+    peak = max(buckets + [0])
+    out = []
+    for i, c in enumerate(buckets):
+        label = "this week" if i == len(buckets) - 1 else f"-{len(buckets) - 1 - i}w"
+        out.append(f"   {label:>9}  {bar(c / peak if peak else 0, 20, ascii_only)} {c}")
+    return "\n".join(out)
+
+
+def cmd_git_stats(args: argparse.Namespace) -> int:
+    root = Path(args.path)
+    if _git(root, "rev-parse", "--git-dir") is None:
+        print(err(f"\u2716 Not a git repo: {root}"), file=sys.stderr)
+        return 2
+    print(head(f"\n  \U0001f4c8  Git stats  \u2014  {root.resolve()}\n"))
+    total = (_git(root, "rev-list", "--count", "--all") or "0").strip()
+    first = _git(root, "log", "--reverse", "--format=%ad", "--date=short", "-1") or "?"
+    last = _git(root, "log", "-1", "--format=%ad", "--date=short") or "?"
+    print(f"   Commits: {paint(total, C.BOLD)}   First: {first}   Last: {last}\n")
+    authors = parse_shortlog(_git(root, "shortlog", "-sne", "--all") or "")
+    if authors:
+        print(head("   Top authors"))
+        peak = authors[0][0] or 1
+        for c, a in authors[: max(1, args.authors)]:
+            print(f"   {c:>5}  {paint(bar(c / peak, 16, args.ascii), C.CYAN)}  {a}")
+        print()
+    pc = punchcard_grid((_git(root, "log", "--all", "--format=%ad", "--date=format:%w:%H") or "").splitlines())
+    if any(any(r) for r in pc):
+        print(head("   Punchcard (day \u00d7 hour)"))
+        print(render_punchcard(pc, args.ascii))
+        print()
+    stamps = []
+    for ln in (_git(root, "log", "--all", "--format=%ct") or "").splitlines():
+        try:
+            stamps.append(int(ln.strip()))
+        except ValueError:
+            pass
+    if stamps:
+        print(head("   Last 12 weeks"))
+        print(render_weeks(week_buckets(stamps, time.time(), 12), args.ascii))
+        print()
+    return 0
+
+
+# -------------------------------------------------------------- lorem
+
+LOREM_WORDS = ("lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor "
+               "incididunt ut labore et dolore magna aliqua enim ad minim veniam quis nostrud "
+               "exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure "
+               "in reprehenderit voluptate velit esse cillum fugiat nulla pariatur excepteur sint "
+               "occaecat cupidatat non proident sunt culpa qui officia deserunt mollit anim id est "
+               "laborum perspiciatis unde omnis iste natus error accusantium doloremque laudantium "
+               "totam rem aperiam eaque ab illo inventore veritatis quasi architecto beatae vitae "
+               "dicta explicabo nemo ipsam quia voluptas aspernatur odit aut fugit consequuntur "
+               "magni dolores eos ratione sequi nesciunt neque porro quisquam numquam eius modi "
+               "tempora incidunt magnam quaerat").split()
+
+
+def lorem_words(n: int, rng: random.Random | None = None) -> str:
+    rng = rng or random.Random()
+    return " ".join(rng.choice(LOREM_WORDS) for _ in range(max(0, n)))
+
+
+def lorem_sentence(rng: random.Random, min_w: int = 6, max_w: int = 14) -> str:
+    words = [rng.choice(LOREM_WORDS) for _ in range(rng.randint(min_w, max_w))]
+    words[0] = words[0].capitalize()
+    return " ".join(words) + "."
+
+
+def lorem_sentences(n: int, rng: random.Random | None = None) -> str:
+    rng = rng or random.Random()
+    return " ".join(lorem_sentence(rng) for _ in range(max(0, n)))
+
+
+def lorem_paragraphs(n: int, rng: random.Random | None = None) -> str:
+    rng = rng or random.Random()
+    return "\n\n".join(" ".join(lorem_sentence(rng) for _ in range(rng.randint(3, 6)))
+                       for _ in range(max(0, n)))
+
+
+def cmd_lorem(args: argparse.Namespace) -> int:
+    if args.words:
+        print(lorem_words(args.words))
+    elif args.sentences:
+        print(lorem_sentences(args.sentences))
+    else:
+        print(lorem_paragraphs(args.paragraphs or 3))
+    return 0
+
+
+# --------------------------------------------------------------- uuid
+
+def make_uuid(v1: bool = False, upper: bool = False, dashes: bool = True) -> str:
+    u = str(uuid.uuid1() if v1 else uuid.uuid4())
+    if not dashes:
+        u = u.replace("-", "")
+    return u.upper() if upper else u
+
+
+def cmd_uuid(args: argparse.Namespace) -> int:
+    for _ in range(max(1, args.count)):
+        print(paint(make_uuid(args.v1, args.upper, not args.no_dashes), C.BOLD))
+    return 0
+
+
+# --------------------------------------------------------------- hash
+
+HASH_ALGOS = ("md5", "sha1", "sha256", "sha512")
+
+
+def hash_bytes(data: bytes, algo: str = "sha256") -> str:
+    h = hashlib.new(algo)
+    h.update(data)
+    return h.hexdigest()
+
+
+def hash_file(path: Path, algos: tuple[str, ...] = ("sha256",)) -> dict[str, str]:
+    hs = {a: hashlib.new(a) for a in algos}
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(65536), b""):
+            for h in hs.values():
+                h.update(chunk)
+    return {a: h.hexdigest() for a, h in hs.items()}
+
+
+def cmd_hash(args: argparse.Namespace) -> int:
+    algos = list(HASH_ALGOS) if args.all else [args.algo]
+    try:
+        if args.file:
+            digests = hash_file(Path(args.file), tuple(algos))
+            label = str(args.file)
+        elif args.text is not None:
+            data = args.text.encode("utf-8")
+            digests = {a: hash_bytes(data, a) for a in algos}
+            label = f"{len(data)} bytes"
+        else:
+            data = sys.stdin.buffer.read()
+            digests = {a: hash_bytes(data, a) for a in algos}
+            label = f"{len(data)} bytes (stdin)"
+    except OSError as e:
+        print(err(f"\u2716 Cannot read input: {e}"), file=sys.stderr)
+        return 2
+    if len(digests) > 1:
+        for a in algos:
+            print(f"   {a:<7} {paint(digests[a], C.BOLD)}")
+        print(dim(f"   ({label})"))
+    else:
+        print(digests[algos[0]])
+    return 0
+
+
+# --------------------------------------------------------------- http
+
+def fetch_url(url: str, method: str = "GET", timeout: float = 10,
+              max_bytes: int = 2000) -> dict:
+    if "://" not in url:
+        url = "http://" + url
+    req = urllib.request.Request(url, method=(method or "GET").upper())
+    t0 = time.time()
+
+    def fail(status: int, error: str, reason: str = "", headers: dict | None = None,
+             body: bytes = b"") -> dict:
+        return {"ok": False, "status": status, "reason": reason, "headers": headers or {},
+                "body": body, "truncated": False,
+                "elapsed_ms": (time.time() - t0) * 1000, "error": error}
+
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            raw = r.read(max_bytes + 1)
+            return {"ok": True, "status": r.status, "reason": r.reason or "",
+                    "headers": dict(r.headers.items()),
+                    "body": raw[:max_bytes], "truncated": len(raw) > max_bytes,
+                    "elapsed_ms": (time.time() - t0) * 1000, "error": ""}
+    except urllib.error.HTTPError as e:
+        try:
+            raw = e.read(max_bytes + 1)
+        except Exception:
+            raw = b""
+        hdrs: dict = {}
+        try:
+            if e.headers:
+                hdrs = dict(e.headers.items())
+        except Exception:
+            pass
+        msg = f"HTTP {e.code} {e.reason or ''}".strip()
+        d = fail(e.code, msg, e.reason or "", hdrs, raw[:max_bytes])
+        d["truncated"] = len(raw) > max_bytes
+        return d
+    except urllib.error.URLError as e:
+        return fail(0, f"Request failed: {e.reason}")
+    except Exception as e:  # e.g. socket.timeout on some platforms
+        return fail(0, f"Request failed: {e}")
+
+
+def header_get(headers: dict, name: str) -> str:
+    low = name.lower()
+    for k, v in headers.items():
+        if k.lower() == low:
+            return v
+    return ""
+
+
+def _is_textual(content_type: str | None) -> bool:
+    ct = (content_type or "").lower()
+    return (ct.startswith(("text/", "application/json", "application/xml",
+                           "application/javascript", "application/x-www-form-urlencoded"))
+            or "+json" in ct or "+xml" in ct or "svg" in ct)
+
+
+def cmd_http(args: argparse.Namespace) -> int:
+    d = fetch_url(args.url, args.method, args.timeout, args.body)
+    if not d["ok"] and d["status"] == 0:
+        print(err(f"\u2716 {d['error']}"), file=sys.stderr)
+        return 1
+    color = C.GREEN if d["ok"] else C.YELLOW
+    print(head(f"\n  \U0001f310  {(args.method or 'GET').upper()} {args.url}\n"))
+    status_txt = f"{d['status']} {d['reason']}".strip()
+    print(f"   Status: {paint(status_txt, color + C.BOLD)}   Time: {d['elapsed_ms']:.0f} ms")
+    ctype = header_get(d["headers"], "Content-Type") or "?"
+    print(f"   Type:   {ctype}")
+    if args.headers:
+        print(head("\n   Headers"))
+        for k in sorted(d["headers"]):
+            print(f"   {k}: {d['headers'][k]}")
+    if not args.no_body:
+        print(head("\n   Body"))
+        if _is_textual(ctype):
+            text = d["body"].decode("utf-8", errors="replace")
+            print("   " + text.replace("\n", "\n   "))
+            if d["truncated"]:
+                print(dim(f"   \u2026truncated to {args.body} bytes"))
+        else:
+            print(dim(f"   [non-text body ({ctype}), {len(d['body'])} byte(s) hidden]"))
+    print()
+    return 0 if d["ok"] else 1
+
+
+# ----------------------------------------------------------- vibe fix
+
+GITIGNORE_TEMPLATE = """\
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+# Node
+node_modules/
+dist/
+build/
+# OS & editors
+.DS_Store
+.vscode/
+.idea/
+"""
+
+README_TEMPLATE = """\
+# {name}
+
+> One-line description of what this does.
+
+## Quick start
+
+```bash
+# how to run it
+```
+
+## License
+
+MIT
+"""
+
+LICENSE_TEMPLATE = """\
+MIT License
+
+Copyright (c) {year} {author}
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
+SMOKE_TEST = ("# Smoke tests - green by default. Replace with real ones.\n"
+              "import unittest\n"
+              "\n"
+              "\n"
+              "class TestSmoke(unittest.TestCase):\n"
+              "    def test_truth(self):\n"
+              "        self.assertTrue(True)\n"
+              "\n"
+              "    def test_math(self):\n"
+              "        self.assertEqual(2 + 2, 4)\n"
+              "\n"
+              "\n"
+              "if __name__ == \"__main__\":\n"
+              "    unittest.main()\n")
+
+
+def vibe_fix(root: Path, assume_yes: bool = False) -> list[str]:
+    root = root.resolve()
+    author = _git(root, "config", "user.name") or "VibeCode"
+    year = datetime.datetime.now().year
+    candidates = [
+        (root / "README.md", README_TEMPLATE.format(name=root.name), "README.md skeleton"),
+        (root / "LICENSE", LICENSE_TEMPLATE.format(year=year, author=author), "MIT LICENSE"),
+        (root / ".gitignore", GITIGNORE_TEMPLATE, ".gitignore (python+node)"),
+        (root / "tests" / "test_smoke.py", SMOKE_TEST, "tests/test_smoke.py sample"),
+    ]
+    missing = [(p, c, d) for p, c, d in candidates if not p.exists()]
+    if not missing:
+        print(ok("\u2714 Nothing to fix \u2014 all basics present."))
+        return []
+    print(head("\n  \U0001f6e0  vibe fix \u2014 will create:\n"))
+    for _, _, d in missing:
+        print(f"   + {d}")
+    print()
+    if not assume_yes:
+        try:
+            ans = input("   Create these files? [y/N] ").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            print()
+            return []
+        if ans not in ("y", "yes"):
+            print(dim("   Aborted. Coward's way out, but ok."))
+            return []
+    created = []
+    for path, content, desc in missing:
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(content, encoding="utf-8")
+            created.append(desc)
+            print(ok(f"   \u2714 {desc}"))
+        except OSError as e:
+            print(err(f"   \u2716 {desc}: {e}"))
+    print()
+    return created
+
+
+# ------------------------------------------------------ banner rainbow
+
+RAINBOW = [91, 93, 92, 96, 94, 95]
+
+
+def strip_ansi(s: str) -> str:
+    return re.sub(r"\033\[[0-9;]+m", "", s)
+
+
+def render_rainbow(text: str, fill: str = "#") -> str:
+    if os.environ.get("NO_COLOR"):
+        return render_banner(text, fill)
+    fill = (fill or "#")[0]
+    rows = [""] * 5
+    for ch in text.upper():
+        glyph = FONT.get(ch, FONT["?"])
+        for i in range(5):
+            rows[i] += glyph[i].replace("#", fill) + "  "
+    out = []
+    for row in rows:
+        line = ""
+        for col, ch in enumerate(row.rstrip()):
+            if ch in (" ", "\t"):
+                line += ch
+            else:
+                line += f"\033[{RAINBOW[col % len(RAINBOW)]}m{ch}"
+        out.append(line + "\033[0m")
+    return "\n".join(out)
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="vibecode",
@@ -911,7 +1480,11 @@ def build_parser() -> argparse.ArgumentParser:
                "  vibecode vibe-check . --roast brutally honest repo review\n"
                "  vibecode banner 'SHIP IT'     big ASCII banner\n"
                "  vibecode serve                open the web playground\n"
-               "  vibecode dashboard            live terminal dashboard\n",
+               "  vibecode dashboard            live terminal dashboard\n"
+               "  vibecode todo add 'ship it'    tiny TODO manager\n"
+               "  vibecode git-stats .           authors + punchcard\n"
+               "  vibecode http example.com      fetch a URL\n"
+               "  vibecode vibe-check . --fix    scaffold missing files\n",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
@@ -928,11 +1501,14 @@ def build_parser() -> argparse.ArgumentParser:
     v.add_argument("path", nargs="?", default=".", help="project directory (default: .)")
     v.add_argument("--roast", action="store_true", help="brutally honest hints")
     v.add_argument("--json", action="store_true", help="machine-readable JSON output")
+    v.add_argument("--fix", action="store_true", help="scaffold missing basics (README, LICENSE, .gitignore, tests)")
+    v.add_argument("--yes", action="store_true", help="don't ask, just create files (with --fix)")
     v.set_defaults(func=cmd_vibe_check)
 
     b = sub.add_parser("banner", help="render a big ASCII banner")
     b.add_argument("text", help="text to render (A-Z, 0-9, few symbols)")
     b.add_argument("--char", default="#", help="fill character (default: #)")
+    b.add_argument("--rainbow", action="store_true", help="neon gradient colors")
     b.set_defaults(func=cmd_banner)
 
     s = sub.add_parser("stats", help="show system info")
@@ -978,6 +1554,57 @@ def build_parser() -> argparse.ArgumentParser:
     w.add_argument("--port", type=int, default=8000, help="port (default: 8000, 0 = auto)")
     w.add_argument("--no-open", action="store_true", help="don't auto-open the browser")
     w.set_defaults(func=cmd_serve)
+
+    t = sub.add_parser("todo", help="tiny terminal TODO manager")
+    ts = t.add_subparsers(dest="todo_cmd", metavar="<action>")
+    tl = ts.add_parser("list", help="list tasks")
+    tl.add_argument("--all", action="store_true", help="include completed")
+    ta = ts.add_parser("add", help="add a task")
+    ta.add_argument("text", nargs="+", help="task text")
+    td = ts.add_parser("done", help="mark task done")
+    td.add_argument("id", type=int)
+    tu = ts.add_parser("undone", help="mark task pending")
+    tu.add_argument("id", type=int)
+    tr = ts.add_parser("rm", help="remove a task")
+    tr.add_argument("id", type=int)
+    tc = ts.add_parser("clear", help="remove completed tasks")
+    tc.add_argument("--all", action="store_true", help="remove everything")
+    t.set_defaults(func=cmd_todo)
+
+    gs = sub.add_parser("git-stats", help="authors, punchcard, weekly activity")
+    gs.add_argument("path", nargs="?", default=".", help="repo directory (default: .)")
+    gs.add_argument("--authors", type=int, default=8, help="top N authors (default: 8)")
+    gs.add_argument("--ascii", action="store_true", help="ASCII-only heatmap")
+    gs.set_defaults(func=cmd_git_stats)
+
+    lo = sub.add_parser("lorem", help="generate placeholder text")
+    lo.add_argument("--words", type=int, help="N words")
+    lo.add_argument("--sentences", type=int, help="N sentences")
+    lo.add_argument("--paragraphs", type=int, help="N paragraphs (default: 3)")
+    lo.set_defaults(func=cmd_lorem)
+
+    uu = sub.add_parser("uuid", help="generate UUIDs")
+    uu.add_argument("--count", type=int, default=1, help="how many (default: 1)")
+    uu.add_argument("--v1", action="store_true", help="time-based v1 (default: random v4)")
+    uu.add_argument("--upper", action="store_true", help="UPPERCASE output")
+    uu.add_argument("--no-dashes", action="store_true", help="32 hex chars, no dashes")
+    uu.set_defaults(func=cmd_uuid)
+
+    hh = sub.add_parser("hash", help="md5/sha1/sha256/sha512 of text, file or stdin")
+    hh.add_argument("--algo", choices=list(HASH_ALGOS), default="sha256")
+    hh.add_argument("--all", action="store_true", help="print all algos")
+    hh.add_argument("text", nargs="?", help="input text (default: stdin)")
+    hh.add_argument("--file", help="read input from file")
+    hh.set_defaults(func=cmd_hash)
+
+    ht = sub.add_parser("http", help="fetch a URL: status, timing, headers, body")
+    ht.add_argument("url", help="URL to fetch")
+    ht.add_argument("--method", default="GET", help="HTTP method (default: GET)")
+    ht.add_argument("--timeout", type=float, default=10, help="seconds (default: 10)")
+    ht.add_argument("--headers", action="store_true", help="show response headers")
+    ht.add_argument("--body", type=int, default=500, help="body preview bytes (default: 500)")
+    ht.add_argument("--no-body", action="store_true", help="skip body preview")
+    ht.set_defaults(func=cmd_http)
 
     return p
 
