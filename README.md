@@ -99,7 +99,7 @@ $ python vibecode.py vibe-check . --roast
    ✔  Real code (>3 files)   +10
    ✔  Docs / contributing    +5
    ✔  Project manifest       +5
-   ✔  Clean git tree          +10
+   ✔  Clean git tree         +10
 
    Score: 100/100  [████████████████████]
    Tier:  LEGENDARY  🏆 This repo belongs in a museum. Flawless.
